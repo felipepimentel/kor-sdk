@@ -1,18 +1,21 @@
 [project]
-name = "kor-core"
+name = "kor-cli"
 version = "0.1.0"
-description = "Core logic within KOR"
+description = "KOR CLI - The command line interface for KOR"
 authors = [{name = "KOR Team", email = "team@kor.dev"}]
 dependencies = [
-    "tomli>=2.0.0; python_version < '3.11'",
-    "tomli-w>=1.0.0",
-    "pydantic>=2.0.0"
+    "kor-core",
+    "click>=8.0.0",
+    "rich>=13.0.0"
 ]
 requires-python = ">=3.10"
+
+[project.scripts]
+kor = "kor_cli.main:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kor_core"]
+packages = ["src/kor_cli"]
