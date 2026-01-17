@@ -115,7 +115,7 @@ class SkillRegistry:
         "bm25": BM25SkillBackend,
     }
     
-    def __init__(self, backend: str = "bm25"):
+    def __init__(self, backend: str = "regex"):
         if backend not in self.BACKENDS:
             raise ValueError(f"Unknown backend: {backend}")
         
