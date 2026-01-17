@@ -1,0 +1,14 @@
+[project]
+name = "kor-monorepo"
+version = "5.0.0"
+description = "KOR: Enterprise Developer Platform - Monorepo"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "packages/kor-core",
+    "packages/kor-tui",
+    "plugins/*"
+]
