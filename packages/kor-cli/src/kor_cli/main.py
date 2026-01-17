@@ -11,6 +11,7 @@ from .commands.chat import chat
 from .commands.new import new
 from .commands.doctor import doctor
 from .commands.config import config
+from .commands.serve import serve
 
 # Configure logging to use Rich
 logging.basicConfig(
@@ -69,6 +70,7 @@ main.add_command(chat)
 main.add_command(new)
 main.add_command(doctor)
 main.add_command(config)
+main.add_command(serve)
 
 if __name__ == "__main__":
     main()
