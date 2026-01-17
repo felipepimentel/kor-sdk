@@ -11,3 +11,8 @@ dependencies = [
 [tool.uv.sources]
 kor-cli = { path = "packages/kor-cli", editable = true }
 kor-core = { path = "packages/kor-core", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

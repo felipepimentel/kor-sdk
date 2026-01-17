@@ -1,20 +1,59 @@
-from .config import ConfigManager, KorConfig
-from .plugin import ServiceRegistry, KorContext, KorPlugin
-from .loader import PluginLoader
-from .kernel import Kernel
-from .agent.runner import GraphRunner
-from .mcp.client import MCPClient
-from .mcp.manager import MCPManager
+"""
+KOR Core SDK
+
+The foundational package for building AI agents with the KOR framework.
+"""
+
+from .api import (
+    Kernel,
+    ConfigManager,
+    KorConfig,
+    KorPlugin,
+    KorContext,
+    ServiceRegistry,
+    PluginLoader,
+    GraphRunner,
+    AgentState,
+    KorTool,
+    TerminalTool,
+    BrowserTool,
+    MCPClient,
+    MCPManager,
+    HookManager,
+    HookEvent,
+)
+
+from .tools.decorators import tool
 
 __all__ = [
-    "KorPlugin", 
-    "KorContext", 
-    "ServiceRegistry", 
-    "PluginLoader", 
-    "Kernel", 
-    "ConfigManager", 
+    # Core
+    "Kernel",
+    "ConfigManager",
     "KorConfig",
+    
+    # Plugins
+    "KorPlugin",
+    "KorContext",
+    "ServiceRegistry",
+    "PluginLoader",
+    
+    # Agent
     "GraphRunner",
+    "AgentState",
+    
+    # Tools
+    "KorTool",
+    "TerminalTool",
+    "BrowserTool",
+    "tool",
+    
+    # MCP
     "MCPClient",
-    "MCPManager"
+    "MCPManager",
+    
+    # Events
+    "HookManager",
+    "HookEvent",
 ]
+
+__version__ = "0.1.0"
