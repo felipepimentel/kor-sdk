@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Type, Dict, Set, Optional
 import logging
 from .plugin import KorPlugin, KorContext
-from .plugin.manifest import PluginManifest
+from .plugin.manifest import PluginManifest, AgentDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class PluginLoader:
     def __init__(self):
         self._plugins: Dict[str, KorPlugin] = {}
         self._discovered_classes: List[Type[KorPlugin]] = []
+        self._discovered_agents: List[AgentDefinition] = []
 
     def register_plugin_class(self, plugin_cls: Type[KorPlugin]):
         """Manually register a plugin class."""
@@ -65,6 +66,10 @@ class PluginLoader:
         manifest = PluginManifest(**data)
         logger.info(f"Discovered plugin: {manifest.name} v{manifest.version}")
 
+        # Store agents
+        if manifest.agents:
+            self._discovered_agents.extend(manifest.agents)
+
         # If it has a python entry point, load it
         if manifest.entry_point:
             # Add plugin root to sys.path to allow imports
@@ -86,6 +91,16 @@ class PluginLoader:
         """
         Instantiates and initializes all registered plugins.
         """
+        # 0. Register agents found in manifests
+        try:
+             # We assume agents service is registered (Kernel does it)
+             agent_registry = context.registry.get_service("agents")
+             for agent_def in self._discovered_agents:
+                 agent_registry.register(agent_def)
+                 logger.info(f"Registered agent from manifest: {agent_def.id}")
+        except Exception as e:
+             logger.warning(f"Could not register agents: {e}")
+
         # 1. Instantiate all plugins
         temp_registry: Dict[str, KorPlugin] = {}
         for cls in self._discovered_classes:

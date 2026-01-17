@@ -7,27 +7,56 @@ from .state import AgentState
 from ..tools.terminal import TerminalTool
 from ..tools.browser import BrowserTool
 
+from ..config import ConfigManager
+
+# --- Supervisor Node ---
+from ..prompts import PromptLoader
+
 # --- Supervisor Node ---
 members = ["Coder", "Researcher"]
-system_prompt = (
-    "You are a supervisor tasked with managing a conversation between the"
-    " following workers: {members}. Given the following user request,"
-    " respond with the worker to act next. Each worker will perform a"
-    " task and respond with their results and status. When finished,"
-    " respond with FINISH."
-)
+# Load prompt from file
+system_prompt_template = PromptLoader.load("supervisor")
+# Fallback if file load fails (though simple loader returns empty str, we might want default)
+if not system_prompt_template:
+    system_prompt_template = (
+        "You are a supervisor tasked with managing a conversation between the"
+        " following workers: {members}. Given the following user request,"
+        " respond with the worker to act next. Each worker will perform a"
+        " task and respond with their results and status. When finished,"
+        " respond with FINISH."
+    )
 
 options = ["FINISH"] + members
 
-try:
-    llm = ChatOpenAI(model="gpt-4-turbo-preview")
-except Exception:
-    llm = None 
+def get_model():
+    """Factory to get the configured chat model."""
+    try:
+        config = ConfigManager().load()
+        if config.model.provider == "openai":
+            # Ensure API key is set if needed (LangChain usually handles env vars, 
+            # but we can pass it explicitly if in secrets)
+            api_key = config.secrets.openai_api_key
+            return ChatOpenAI(
+                model=config.model.name, 
+                temperature=config.model.temperature,
+                api_key=api_key
+            )
+        # Add other providers here
+    except Exception as e:
+        print(f"Failed to load model: {e}")
+    return None
 
 def supervisor_node(state: AgentState):
     """Decides which worker should act next."""
+    llm = get_model()
+    
     if not llm:
-        last_msg = state['messages'][-1].content.lower()
+        last_msg_obj = state['messages'][-1]
+        # If the last message is from a worker, we should finish (for simple one-shot tasks)
+        if hasattr(last_msg_obj, "name") and last_msg_obj.name in members:
+             return {"next_step": "FINISH"}
+
+        last_msg = last_msg_obj.content.lower()
         if "code" in last_msg or "file" in last_msg or "list" in last_msg:
             return {"next_step": "Coder"}
         elif "research" in last_msg or "search" in last_msg or "web" in last_msg:
@@ -36,7 +65,7 @@ def supervisor_node(state: AgentState):
 
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", system_prompt),
+            ("system", system_prompt_template),
             MessagesPlaceholder(variable_name="messages"),
             (
                 "system",

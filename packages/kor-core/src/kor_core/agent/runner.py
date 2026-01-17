@@ -2,8 +2,8 @@ from langchain_core.messages import HumanMessage
 from .graph import create_graph
 
 class GraphRunner:
-    def __init__(self):
-        self.graph = create_graph()
+    def __init__(self, graph=None):
+        self.graph = graph or create_graph()
 
     def run(self, user_input: str):
         """

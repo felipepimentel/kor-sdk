@@ -5,6 +5,7 @@ from .plugin import ServiceRegistry, KorContext
 from .loader import PluginLoader
 from .config import ConfigManager
 from .events.hook import HookManager, HookEvent
+from .agent.registry import AgentRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,8 @@ class Kernel:
 
         # 2. Setup Services
         self.registry = ServiceRegistry()
+        self.agent_registry = AgentRegistry()
+        self.registry.register_service("agents", self.agent_registry)
         self.hooks = HookManager()
         
         # 3. Create Context
@@ -47,6 +50,16 @@ class Kernel:
             return
         
         logger.info(f"Booting KOR Kernel (User: {self.config.user.name or 'Guest'})...")
+        
+        # Register default internal agent
+        from .plugin.manifest import AgentDefinition
+        self.agent_registry.register(AgentDefinition(
+            id="default-supervisor",
+            name="Default Supervisor",
+            description="Standard supervisor with Coder and Researcher",
+            entry="kor_core.agent.graph:create_graph"
+        ))
+
         self.load_plugins()
         self.loader.load_plugins(self.context)
         self._is_initialized = True

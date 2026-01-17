@@ -23,10 +23,20 @@ class SecretsConfig(BaseModel):
     openai_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
 
+class ModelConfig(BaseModel):
+    provider: str = "openai"
+    name: str = "gpt-4-turbo-preview"
+    temperature: float = 0.7
+
+class AgentConfig(BaseModel):
+    active: str = "default-supervisor"
+
 class KorConfig(BaseModel):
     user: UserConfig = Field(default_factory=UserConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     secrets: SecretsConfig = Field(default_factory=SecretsConfig)
+    model: ModelConfig = Field(default_factory=ModelConfig)
+    agent: AgentConfig = Field(default_factory=AgentConfig)
     plugins: Dict[str, Any] = Field(default_factory=dict)
 
 class ConfigManager:

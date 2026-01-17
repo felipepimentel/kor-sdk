@@ -2,16 +2,29 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from kor_core import GraphRunner
+from kor_core import GraphRunner, Kernel
 
 console = Console()
 
 @click.command()
 def chat():
     """Starts the interactive KOR agent session."""
-    console.print(Panel("Starting KOR Agent (LangGraph/Supervisor Mode)", style="bold purple"))
     
-    runner = GraphRunner()
+    # Boot Kernel to load plugins/agents
+    kernel = Kernel()
+    kernel.boot()
+    
+    # Resolve active agent
+    active_agent_id = kernel.config.agent.active
+    console.print(Panel(f"Starting KOR Agent: [bold]{active_agent_id}[/bold]", style="bold purple"))
+    
+    try:
+        agent_registry = kernel.registry.get_service("agents")
+        graph = agent_registry.load_graph(active_agent_id)
+        runner = GraphRunner(graph=graph)
+    except Exception as e:
+        console.print(f"[bold red]Failed to load agent {active_agent_id}: {e}[/]")
+        return
 
     while True:
         try:
