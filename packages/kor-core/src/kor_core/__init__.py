@@ -3,6 +3,8 @@ from .plugin import ServiceRegistry, KorContext, KorPlugin
 from .loader import PluginLoader
 from .kernel import Kernel
 from .agent.runner import GraphRunner
+from .mcp.client import MCPClient
+from .mcp.manager import MCPManager
 
 __all__ = [
     "KorPlugin", 
@@ -12,5 +14,7 @@ __all__ = [
     "Kernel", 
     "ConfigManager", 
     "KorConfig",
-    "GraphRunner"
+    "GraphRunner",
+    "MCPClient",
+    "MCPManager"
 ]

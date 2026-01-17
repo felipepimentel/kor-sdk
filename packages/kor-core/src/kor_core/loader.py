@@ -1,9 +1,14 @@
 import importlib
+import importlib.metadata
 import pkgutil
 import sys
-from typing import List, Type, Dict, Set
+import os
+import json
+from pathlib import Path
+from typing import List, Type, Dict, Set, Optional
 import logging
 from .plugin import KorPlugin, KorContext
+from .plugin.manifest import PluginManifest
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +24,67 @@ class PluginLoader:
         """Manually register a plugin class."""
         self._discovered_classes.append(plugin_cls)
 
+    def discover_entry_points(self, group: str = "kor.plugins") -> None:
+        """
+        Discovers plugins via Python entry-points.
+        Packages can declare: [project.entry-points."kor.plugins"]
+        """
+        try:
+            eps = importlib.metadata.entry_points(group=group)
+            for ep in eps:
+                try:
+                    plugin_cls = ep.load()
+                    if isinstance(plugin_cls, type) and issubclass(plugin_cls, KorPlugin):
+                        self.register_plugin_class(plugin_cls)
+                        logger.info(f"Discovered plugin via entry-point: {ep.name}")
+                except Exception as e:
+                    logger.error(f"Failed to load entry-point {ep.name}: {e}")
+        except Exception as e:
+            logger.debug(f"No entry-points found for group '{group}': {e}")
+
+    def load_directory_plugins(self, plugins_dir: Path) -> None:
+        """
+        Scans a directory for plugins with plugin.json manifests.
+        """
+        if not plugins_dir.exists():
+            return
+
+        for entry in plugins_dir.iterdir():
+            if entry.is_dir():
+                manifest_path = entry / "plugin.json"
+                if manifest_path.exists():
+                    try:
+                        self._load_plugin_from_manifest(manifest_path, entry)
+                    except Exception as e:
+                        logger.error(f"Failed to load plugin from {entry}: {e}")
+
+    def _load_plugin_from_manifest(self, manifest_path: Path, root_dir: Path):
+        with open(manifest_path, "rb") as f:
+            data = json.load(f)
+        
+        manifest = PluginManifest(**data)
+        logger.info(f"Discovered plugin: {manifest.name} v{manifest.version}")
+
+        # If it has a python entry point, load it
+        if manifest.entry_point:
+            # Add plugin root to sys.path to allow imports
+            sys.path.insert(0, str(root_dir))
+            try:
+                module_name = manifest.entry_point.replace(".py", "").replace("/", ".")
+                module = importlib.import_module(module_name)
+                # Look for KorPlugin subclasses in the module
+                for attribute_name in dir(module):
+                    attribute = getattr(module, attribute_name)
+                    if isinstance(attribute, type) and issubclass(attribute, KorPlugin) and attribute is not KorPlugin:
+                        self.register_plugin_class(attribute)
+            except Exception as e:
+                logger.error(f"Failed to load entry point {manifest.entry_point} for {manifest.name}: {e}")
+            finally:
+                sys.path.pop(0)
+
     def load_plugins(self, context: KorContext) -> None:
         """
         Instantiates and initializes all registered plugins.
-        TODO: Implement topological sort for dependencies.
         """
         # 1. Instantiate all plugins
         temp_registry: Dict[str, KorPlugin] = {}
@@ -36,9 +98,7 @@ class PluginLoader:
             except Exception as e:
                 logger.error(f"Failed to instantiate plugin {cls}: {e}")
 
-        # 2. Resolve Dependencies (Simple pass for now, assume order doesn't matter for init logic 
-        # unless we strictly enforce it. For strict injection, we'd sort here).
-        # For simplicity v1: Just load them all.
+        # 2. Resolve Dependencies (Simple pass for now)
         
         # 3. Initialize
         for plugin_id, plugin in temp_registry.items():

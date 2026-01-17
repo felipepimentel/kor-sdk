@@ -19,9 +19,14 @@ class UserConfig(BaseModel):
 class SecurityConfig(BaseModel):
     paranoid_mode: bool = False
 
+class SecretsConfig(BaseModel):
+    openai_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+
 class KorConfig(BaseModel):
     user: UserConfig = Field(default_factory=UserConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+    secrets: SecretsConfig = Field(default_factory=SecretsConfig)
     plugins: Dict[str, Any] = Field(default_factory=dict)
 
 class ConfigManager:
@@ -47,7 +52,6 @@ class ConfigManager:
             logger.debug(f"Loaded config from {self.config_path}")
         except Exception as e:
             logger.error(f"Failed to load config: {e}. Using defaults.")
-            # Backup corrupt config?
         
         return self._config
 
@@ -60,6 +64,44 @@ class ConfigManager:
             logger.debug(f"Saved config to {self.config_path}")
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
+
+    def set(self, key: str, value: str) -> None:
+        """Sets a configuration value using dot notation (e.g., 'secrets.openai_api_key')."""
+        parts = key.lower().split(".")
+        if len(parts) == 1:
+            # Shorthand for secrets
+            if parts[0] in ["openai_api_key", "anthropic_api_key"]:
+                setattr(self._config.secrets, parts[0], value)
+            else:
+                raise KeyError(f"Unknown config key: {key}")
+        elif len(parts) == 2:
+            section, field = parts
+            if hasattr(self._config, section):
+                section_obj = getattr(self._config, section)
+                if hasattr(section_obj, field):
+                    setattr(section_obj, field, value)
+                else:
+                    raise KeyError(f"Unknown field '{field}' in section '{section}'")
+            else:
+                raise KeyError(f"Unknown section: {section}")
+        else:
+            raise KeyError(f"Invalid key format: {key}")
+        self.save()
+
+    def get(self, key: str) -> Any:
+        """Gets a configuration value using dot notation."""
+        parts = key.lower().split(".")
+        if len(parts) == 1:
+            if parts[0] in ["openai_api_key", "anthropic_api_key"]:
+                return getattr(self._config.secrets, parts[0])
+            raise KeyError(f"Unknown config key: {key}")
+        elif len(parts) == 2:
+            section, field = parts
+            if hasattr(self._config, section):
+                section_obj = getattr(self._config, section)
+                if hasattr(section_obj, field):
+                    return getattr(section_obj, field)
+        raise KeyError(f"Unknown key: {key}")
 
     @property
     def config(self) -> KorConfig:
