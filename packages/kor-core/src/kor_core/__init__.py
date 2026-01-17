@@ -2,6 +2,7 @@ from .config import ConfigManager, KorConfig
 from .plugin import ServiceRegistry, KorContext, KorPlugin
 from .loader import PluginLoader
 from .kernel import Kernel
+from .agent.runner import GraphRunner
 
 __all__ = [
     "KorPlugin", 
@@ -10,5 +11,6 @@ __all__ = [
     "PluginLoader", 
     "Kernel", 
     "ConfigManager", 
-    "KorConfig"
+    "KorConfig",
+    "GraphRunner"
 ]
