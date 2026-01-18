@@ -1,16 +1,17 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from .nodes import supervisor_node, coder_node, researcher_node
+from .nodes import supervisor_node, coder_node, researcher_node, explorer_node
 
-def create_graph():
+def create_graph(checkpointer=None):
     workflow = StateGraph(AgentState)
     
     workflow.add_node("Supervisor", supervisor_node)
     workflow.add_node("Coder", coder_node)
     workflow.add_node("Researcher", researcher_node)
+    workflow.add_node("Explorer", explorer_node)
 
     # Edge logic
-    for member in ["Coder", "Researcher"]:
+    for member in ["Coder", "Researcher", "Explorer"]:
         # Workers return to supervisor
         workflow.add_edge(member, "Supervisor") 
 
@@ -18,6 +19,7 @@ def create_graph():
     conditional_map = {
         "Coder": "Coder",
         "Researcher": "Researcher",
+        "Explorer": "Explorer",
         "FINISH": END
     }
     
@@ -28,4 +30,4 @@ def create_graph():
     )
 
     workflow.set_entry_point("Supervisor")
-    return workflow.compile()
+    return workflow.compile(checkpointer=checkpointer)

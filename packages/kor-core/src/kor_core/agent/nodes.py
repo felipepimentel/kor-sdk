@@ -2,18 +2,57 @@ from typing import Dict, Any, Literal
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from .state import AgentState
+from ..config import ConfigManager
 from ..tools.terminal import TerminalTool
 from ..tools.browser import BrowserTool
 
-from ..config import ConfigManager
+def get_tool_from_registry(name: str):
+    """Attempt to get a tool from the global registry, fallback to defaults."""
+    try:
+        from ..kernel import get_kernel
+        k = get_kernel()
+        k.boot()
+        registry = k.registry.get_service("tools")
+        if registry:
+            tool_info = registry.get(name)
+            if tool_info:
+                tool = tool_info.tool_class()
+                # Inject registry if the tool needs it (e.g. SearchToolsTool)
+                if hasattr(tool, "registry"): tool.registry = registry
+                return tool
+                
+            # If name is not found, try a semantic search as fallback?
+            # For now, we prefer exact names or known fallbacks.
+    except Exception as e:
+        print(f"Tool lookup error: {e}")
+        pass
+    
+    # Fallbacks for built-in tools if registry is missing
+    if name == "terminal": return TerminalTool()
+    if name == "browser": return BrowserTool()
+    return None
+
+def get_best_tool_for_node(node_name: str, task_context: str = "") -> Any:
+    """Discovers the best tool for a given node based on defaults or registry."""
+    # Mapping of nodes to their 'preferred' primary tool
+    defaults = {
+        "Coder": "terminal",
+        "Researcher": "browser",
+        "Explorer": "search_tools"
+    }
+    
+    # 1. Check if the task context explicitly mentions a tool
+    # 2. Return the default for the node
+    tool_name = defaults.get(node_name)
+    return get_tool_from_registry(tool_name) if tool_name else None
+
 
 # --- Supervisor Node ---
 from ..prompts import PromptLoader
 
 # --- Supervisor Node ---
-members = ["Coder", "Researcher"]
+members = ["Coder", "Researcher", "Explorer"]
 # Load prompt from file
 system_prompt_template = PromptLoader.load("supervisor")
 # Fallback if file load fails (though simple loader returns empty str, we might want default)
@@ -41,7 +80,14 @@ def get_model():
                 temperature=config.model.temperature,
                 api_key=api_key
             )
-        # Add other providers here
+        elif config.model.provider == "anthropic":
+            from langchain_anthropic import ChatAnthropic
+            api_key = config.secrets.anthropic_api_key
+            return ChatAnthropic(
+                model=config.model.name,
+                temperature=config.model.temperature,
+                api_key=api_key
+            )
     except Exception as e:
         print(f"Failed to load model: {e}")
     return None
@@ -75,11 +121,19 @@ def supervisor_node(state: AgentState):
         ]
     ).partial(options=str(options), members=", ".join(members))
 
-    supervisor_chain = (
-        prompt
-        | llm.bind_functions(functions=[dict(name="route", parameters=dict(type="object", properties=dict(next=dict(type="string", enum=options)), required=["next"]))], function_call="route")
-        | JsonOutputFunctionsParser()
-    )
+    schema = {
+        "name": "route",
+        "description": "Select the next worker or FINISH",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "next": {"type": "string", "enum": options}
+            },
+            "required": ["next"]
+        }
+    }
+
+    supervisor_chain = prompt | llm.with_structured_output(schema)
 
     return supervisor_chain.invoke(state)
 
@@ -91,13 +145,13 @@ def coder_node(state: AgentState):
     """
     # Simple logic: If the user message asks to list files, we do it.
     last_msg = state['messages'][-1].content
-    tool = TerminalTool()
+    tool = get_best_tool_for_node("Coder", last_msg)
     
     response = "I am ready to code."
     
     # Very naive instruction following for V1
     if "list" in last_msg.lower():
-        output = tool._run("ls -la")
+        output = tool._run("ls -la") if tool else "No tool available"
         response = f"Listing files:\n{output}"
     
     return {
@@ -110,19 +164,38 @@ def researcher_node(state: AgentState):
     """
     Researcher Worker. Can search the web.
     """
-    tool = BrowserTool()
     last_msg = state['messages'][-1].content
+    tool = get_best_tool_for_node("Researcher", last_msg)
     
     response = "I am ready to research."
     # Naive extraction (in real world an Agent would decide arguments)
     if "search" in last_msg.lower() or "research" in last_msg.lower():
         # Strip "search"
         query = last_msg.replace("search", "").replace("research", "").strip() or "python mcp"
-        output = tool._run(query)
+        output = tool._run(query) if tool else "No tool available"
         response = f"Search Results for '{query}':\n{output}"
 
     return {
         "messages": [
             HumanMessage(content=f"[Researcher] {response}", name="Researcher")
+        ]
+    }
+
+def explorer_node(state: AgentState):
+    """
+    Discovery Worker. Can search for available tools.
+    """
+    last_msg = state['messages'][-1].content
+    tool = get_best_tool_for_node("Explorer", last_msg)
+    
+    response = "I am ready to discover capabilities."
+    if "tool" in last_msg.lower() or "find" in last_msg.lower():
+        query = last_msg.replace("find", "").replace("tool", "").strip() or "general"
+        output = tool._run(query) if tool else "No tool available"
+        response = f"Discovered Capabilities for '{query}':\n{output}"
+        
+    return {
+        "messages": [
+            HumanMessage(content=f"[Explorer] {response}", name="Explorer")
         ]
     }

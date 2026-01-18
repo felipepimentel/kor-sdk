@@ -27,12 +27,39 @@ class Kernel:
         self.agent_registry = AgentRegistry()
         self.registry.register_service("agents", self.agent_registry)
         self.hooks = HookManager()
+        from .events.telemetry import setup_telemetry
+        setup_telemetry(self.hooks)
         
-        # 3. Create Context
+        # 3. Register Core Tools
+        self._register_core_tools()
+
+        # 4. Create Context
         self.context = KorContext(self.registry, self.config.model_dump())
-        
         self.loader = PluginLoader()
         self._is_initialized = False
+        self.permission_callback: Optional[Callable[[str, Any], bool]] = None
+
+    def request_permission(self, action: str, details: Any) -> bool:
+        """Requests permission for a sensitive action."""
+        if self.permission_callback:
+            return self.permission_callback(action, details)
+        
+        # Fallback to emitting hook and assuming true if no one handles it?
+        # In a real professional system, we'd wait for an event response.
+        return True # Default to true for now if not set
+
+    def _register_core_tools(self):
+        """Register built-in tools and services."""
+        from .tools import ToolRegistry, TerminalTool, BrowserTool, create_search_tool
+        
+        # Initialize Registry service
+        registry = ToolRegistry(backend="bm25")
+        self.registry.register_service("tools", registry)
+        
+        # Register core tools
+        registry.register(TerminalTool(), tags=["shell", "execute", "commands", "terminal", "system"])
+        registry.register(BrowserTool(), tags=["web", "browse", "search", "http", "internet"])
+        registry.register(create_search_tool(registry), tags=["discovery", "find", "tools", "help"])
 
     def load_plugins(self):
         """Discovers and loads core and external plugins."""
@@ -62,10 +89,20 @@ class Kernel:
 
         self.load_plugins()
         self.loader.load_plugins(self.context)
+        
+        # Export default prompts for user customization
+        from .prompts import PromptLoader
+        PromptLoader.export_defaults()
+        
         self._is_initialized = True
         
-        # Emit on_boot hook (synchronous wrapper for async emit)
-        asyncio.get_event_loop().run_until_complete(self.hooks.emit(HookEvent.ON_BOOT))
+        # Emit on_boot hook
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.create_task(self.hooks.emit(HookEvent.ON_BOOT))
+        else:
+            loop.run_until_complete(self.hooks.emit(HookEvent.ON_BOOT))
+        
         logger.info("KOR Kernel Ready.")
 
     def shutdown(self):
@@ -73,3 +110,13 @@ class Kernel:
         logger.info("Shutting down KOR Kernel...")
         asyncio.get_event_loop().run_until_complete(self.hooks.emit(HookEvent.ON_SHUTDOWN))
         self._is_initialized = False
+
+def get_kernel():
+    """Returns the global Kernel instance."""
+    global _kernel_instance
+    if _kernel_instance is None:
+        from .kernel import Kernel
+        _kernel_instance = Kernel()
+    return _kernel_instance
+
+_kernel_instance: Optional["Kernel"] = None

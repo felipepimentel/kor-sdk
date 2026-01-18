@@ -17,10 +17,17 @@ class TerminalTool(KorTool):
     confirmation_callback: Optional[Callable[[str], bool]] = None
 
     def _run(self, command: str) -> str:
-        # Check confirmation
-        if self.requires_confirmation and self.confirmation_callback:
+        # 1. Use tool-specific callback if set
+        if self.confirmation_callback:
             if not self.confirmation_callback(command):
                 return "[Cancelled by user]"
+        
+        # 2. Otherwise use the Kernel's global permission system
+        elif self.requires_confirmation:
+            from ..kernel import get_kernel
+            k = get_kernel()
+            if not k.request_permission("terminal_command", command):
+                return "[Permission Denied]"
         
         try:
             result = subprocess.run(

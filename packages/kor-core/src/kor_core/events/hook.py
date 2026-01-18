@@ -21,6 +21,10 @@ class HookEvent(str, Enum):
     ON_AGENT_END = "on_agent_end"
     ON_AGENT_ERROR = "on_agent_error"
     
+    # Node/Step hooks
+    ON_NODE_START = "on_node_start"
+    ON_NODE_END = "on_node_end"
+    
     # Tool hooks
     ON_TOOL_CALL = "on_tool_call"
     AFTER_TOOL_CALL = "after_tool_call"
@@ -47,6 +51,12 @@ class HookManager:
     """
     def __init__(self):
         self._hooks: Dict[str, List[Callable]] = {e.value: [] for e in HookEvent}
+        self._global_listeners: List[Callable] = []
+
+    def register_global_listener(self, callback: Callable):
+        """Register a callback that receives every emitted event."""
+        self._global_listeners.append(callback)
+        logger.debug("Registered global hook listener")
 
     def register(self, event: HookEvent, callback: Callable):
         """Register a function to be called on event."""
@@ -64,6 +74,17 @@ class HookManager:
 
     async def emit(self, event: HookEvent, *args, **kwargs):
         """Emit an event, awaiting all async listeners."""
+        # 1. Global listeners
+        for listener in self._global_listeners:
+            try:
+                if is_async_callable(listener):
+                    await listener(event, *args, **kwargs)
+                else:
+                    listener(event, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Error in global hook listener {listener}: {e}")
+
+        # 2. Specific listeners
         listeners = self._hooks.get(event.value, [])
         for listener in listeners:
             try:
@@ -76,6 +97,15 @@ class HookManager:
 
     def emit_sync(self, event: HookEvent, *args, **kwargs):
         """Synchronous emit for non-async contexts."""
+        # 1. Global listeners
+        for listener in self._global_listeners:
+            try:
+                if not is_async_callable(listener):
+                    listener(event, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Error in global hook listener {listener}: {e}")
+
+        # 2. Specific listeners
         listeners = self._hooks.get(event.value, [])
         for listener in listeners:
             try:

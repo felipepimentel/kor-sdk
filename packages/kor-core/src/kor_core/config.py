@@ -11,27 +11,30 @@ import tomli_w
 
 logger = logging.getLogger(__name__)
 
-class UserConfig(BaseModel):
+class BaseConfig(BaseModel):
+    model_config = {"validate_assignment": True, "extra": "ignore"}
+
+class UserConfig(BaseConfig):
     id: Optional[str] = None
     name: Optional[str] = None
     token: Optional[str] = None
 
-class SecurityConfig(BaseModel):
+class SecurityConfig(BaseConfig):
     paranoid_mode: bool = False
 
-class SecretsConfig(BaseModel):
+class SecretsConfig(BaseConfig):
     openai_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
 
-class ModelConfig(BaseModel):
+class ModelConfig(BaseConfig):
     provider: str = "openai"
     name: str = "gpt-4-turbo-preview"
     temperature: float = 0.7
 
-class AgentConfig(BaseModel):
+class AgentConfig(BaseConfig):
     active: str = "default-supervisor"
 
-class KorConfig(BaseModel):
+class KorConfig(BaseConfig):
     user: UserConfig = Field(default_factory=UserConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     secrets: SecretsConfig = Field(default_factory=SecretsConfig)

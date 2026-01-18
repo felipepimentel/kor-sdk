@@ -28,11 +28,7 @@ KOR_MODELS = [
     Model(
         id="kor-agent-v1",
         created=int(time.time()),
-        owned_by="kor"
-    ),
-    Model(
-        id="kor-agent-fast",
-        created=int(time.time()),
-        owned_by="kor"
-    ),
+        owned_by="kor-sdk"
+    )
 ]
+

@@ -25,9 +25,21 @@ def doctor():
 
     # 2. Kernel Boot
     try:
-        kernel = Kernel()
+        from kor_core.kernel import get_kernel
+        kernel = get_kernel()
         kernel.boot()
         table.add_row("KOR Kernel", "[green]✔[/]", "Booted successfully")
+        
+        # 2.1 Registry check
+        from kor_core.tools import ToolRegistry
+        tools_registry = kernel.registry.get_service("tools")
+        tool_count = len(tools_registry.list()) if tools_registry else 0
+        table.add_row("Tool Registry", "[green]✔[/]", f"{tool_count} tools registered")
+        
+        agent_registry = kernel.registry.get_service("agents")
+        agent_count = len(agent_registry.list()) if agent_registry else 0
+        table.add_row("Agent Registry", "[green]✔[/]", f"{agent_count} agents available")
+        
     except Exception as e:
         table.add_row("KOR Kernel", "[red]✘[/]", f"Boot failed: {e}")
 

@@ -30,10 +30,8 @@ class OpenAIToKORAdapter:
 
     def __init__(self):
         # We need to boot the kernel to get the registry and config
-        # This might be heavy per-request if not cached, but for now it's okay 
-        # as Kernel is somewhat lightweight or we assume it's singleton-like usage here.
-        # Ideally, we inject the kernel or graph.
-        self.kernel = Kernel()
+        from kor_core.kernel import get_kernel
+        self.kernel = get_kernel()
         try:
             self.kernel.boot()
             active_id = self.kernel.config.agent.active
