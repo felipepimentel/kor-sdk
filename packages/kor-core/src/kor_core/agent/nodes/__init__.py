@@ -4,6 +4,7 @@ from .coder import coder_node
 from .reviewer import reviewer_node
 from .specialized import researcher_node, explorer_node
 from .base import get_tool_from_registry, get_best_tool_for_node
+from .external_tool_executor import external_tool_executor_node
 
 __all__ = [
     "supervisor_node",
@@ -13,5 +14,7 @@ __all__ = [
     "researcher_node",
     "explorer_node",
     "get_tool_from_registry",
-    "get_best_tool_for_node"
+    "get_best_tool_for_node",
+    "external_tool_executor_node"
 ]
+

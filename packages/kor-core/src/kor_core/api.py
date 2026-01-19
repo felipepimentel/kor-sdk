@@ -11,7 +11,7 @@ from .plugin import KorPlugin, KorContext, ServiceRegistry
 from .loader import PluginLoader
 from .agent.runner import GraphRunner
 from .agent.state import AgentState
-from .tools import TerminalTool, BrowserTool, KorTool
+from .tools import TerminalTool, BrowserTool, KorTool, ToolRegistry, ToolInfo
 from .mcp import MCPClient, MCPManager
 from .events import HookManager, HookEvent
 from .exceptions import (
@@ -48,6 +48,8 @@ __all__ = [
     "KorTool",
     "TerminalTool",
     "BrowserTool",
+    "ToolRegistry",
+    "ToolInfo",
     
     # MCP
     "MCPClient",

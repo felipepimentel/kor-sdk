@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from .nodes import supervisor_node, coder_node, researcher_node, explorer_node, architect_node, reviewer_node
+from .nodes import supervisor_node, coder_node, researcher_node, explorer_node, architect_node, reviewer_node, external_tool_executor_node
 from .factory import AgentFactory
 from ..kernel import get_kernel
 
@@ -23,7 +23,10 @@ def create_graph(checkpointer=None):
     # but we might want to inject the DYNAMIC list of members into it.
     workflow.add_node("Supervisor", supervisor_node)
     
-    # 2. Add Member Nodes (Dynamic)
+    # 2. Add ExternalToolExecutor (For client-side tools)
+    workflow.add_node("ExternalToolExecutor", external_tool_executor_node)
+    
+    # 3. Add Member Nodes (Dynamic)
     # We read from config.agent.supervisor_members
     # Fallback to defaults if empty?
     members = kernel.config.agent.supervisor_members or ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
@@ -37,11 +40,12 @@ def create_graph(checkpointer=None):
         "Reviewer": reviewer_node
     }
 
-    # 3. Dynamic Conditional Edges
+    # 4. Dynamic Conditional Edges
     # Map each member name to itself to support the Supervisor's routing logic
     conditional_map = {name: name for name in members}
     conditional_map["FINISH"] = END
     conditional_map["Supervisor"] = "Supervisor"
+    conditional_map["ExternalToolExecutor"] = "ExternalToolExecutor"
 
     for member_name in members:
         node_func = None
@@ -76,6 +80,13 @@ def create_graph(checkpointer=None):
     # we can assume supervisor_node reads from config/global state if we refactored it.
     # BUT we didn't refactor supervisor_node yet to read dynamic members.
     # We should probably do that next.
+    
+    # ExternalToolExecutor uses conditional routing (FINISH or Supervisor)
+    workflow.add_conditional_edges(
+        "ExternalToolExecutor",
+        lambda x: x["next_step"],
+        conditional_map
+    )
     
     workflow.add_conditional_edges(
         "Supervisor", 

@@ -4,9 +4,9 @@ Bridge between OpenAI API format and KOR SDK Agent.
 
 import json
 import logging
-from typing import AsyncGenerator, List, Dict, Any
+from typing import AsyncGenerator, List, Dict, Any, Union
 from kor_core import GraphRunner
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
 
 from ..schemas.chat import (
     ChatCompletionRequest,
@@ -40,44 +40,96 @@ class OpenAIToKORAdapter:
             # Fallback to default if boot/load fails
             self.runner = GraphRunner()
 
+    def _convert_messages(self, messages: List[Message]) -> List[BaseMessage]:
+        """Converts OpenAI Pydantic messages to LangChain messages."""
+        from langchain_core.messages import ToolMessage
+        lc_messages = []
+        for msg in messages:
+            if msg.role == "user":
+                lc_messages.append(HumanMessage(content=msg.content or ""))
+            elif msg.role == "assistant":
+                lc_messages.append(AIMessage(content=msg.content or ""))
+            elif msg.role == "system":
+                lc_messages.append(SystemMessage(content=msg.content or ""))
+            elif msg.role == "tool":
+                lc_messages.append(ToolMessage(
+                    content=msg.content or "",
+                    tool_call_id=msg.tool_call_id or "",
+                    name=msg.name or ""
+                ))
+        return lc_messages
+
     async def run_chat(self, request: ChatCompletionRequest) -> AsyncGenerator[ChatCompletionChunk, None]:
         """Runs the agent and yields OpenAI-compatible chunks."""
         
-        # 1. Extract inputs
-        # Currently KOR GraphRunner takes a single string. 
-        # We take the last user message as the primary query.
-        last_user_msg = next((m.content for m in reversed(request.messages) if m.role == "user"), "")
+        # 1. Convert Inputs
+        input_messages = self._convert_messages(request.messages)
         
-        # 2. Run the Graph
-        # Note: GraphRunner.run yields dictionaries representing LangGraph events.
-        # Example event: {"Coder": {"messages": [AIMessage(...)]}}
-        
-        chunk_id = f"chatcmpl-{json.dumps(request.model_dump())[:10]}" # Stable-ish ID
+        # 2. Convert external tools from request
+        external_tools = []
+        if request.tools:
+            for tool in request.tools:
+                external_tools.append(tool.model_dump())
         
         try:
-            # We wrap the synchronous runner in an async context if needed, 
-            # but usually LangGraph stream is sync-generator based unless configured otherwise.
-            # For simplicity, we assume GraphRunner.run is sync.
-            for event in self.runner.run(last_user_msg):
+            graph_input = {
+                "messages": input_messages,
+                "external_tools": external_tools if external_tools else None
+            }
+
+            for event in self.runner.run(graph_input):
+                logger.info(f"Graph event received details: {event}")
                 for node, details in event.items():
-                    # Handle message outputs from workers
-                    if node in ["Coder", "Researcher"]:
-                        messages = details.get("messages", [])
-                        for msg in messages:
-                            content = getattr(msg, "content", "")
-                            if content:
-                                yield ChatCompletionChunk(
-                                    model=request.model,
-                                    choices=[
-                                        ChoiceDelta(
-                                            index=0,
-                                            delta=DeltaMessage(content=content)
-                                        )
-                                    ]
+                    # Check for pending tool calls (from ExternalToolExecutor)
+                    pending_calls = details.get("pending_tool_calls", [])
+                    if pending_calls:
+                        # Yield tool calls in OpenAI format
+                        from ..schemas.chat import ToolCall, FunctionCall
+                        tool_call_objs = []
+                        for pc in pending_calls:
+                            tool_call_objs.append(ToolCall(
+                                id=pc.get("id", f"call_{hash(pc.get('function', {}).get('name', ''))}"),
+                                type="function",
+                                function=FunctionCall(
+                                    name=pc.get("function", {}).get("name", ""),
+                                    arguments=pc.get("function", {}).get("arguments", "{}")
                                 )
+                            ))
+                        
+                        yield ChatCompletionChunk(
+                            model=request.model,
+                            choices=[
+                                ChoiceDelta(
+                                    index=0,
+                                    delta=DeltaMessage(tool_calls=tool_call_objs),
+                                    finish_reason="tool_calls"
+                                )
+                            ]
+                        )
+                        return  # Early return as we need client to execute tools
                     
-                    # You could also emit "Thinking..." steps or node transitions here
-                    # as OpenAI comments or hidden tokens, but for now we follow the spec.
+                    # Handle message outputs from ANY node
+                    messages = details.get("messages", [])
+                    if not isinstance(messages, list):
+                        messages = [messages]
+
+                    for msg in messages:
+                        content = ""
+                        if hasattr(msg, "content"):
+                            content = msg.content
+                        elif isinstance(msg, str):
+                            content = msg
+                        
+                        if content:
+                            yield ChatCompletionChunk(
+                                model=request.model,
+                                choices=[
+                                    ChoiceDelta(
+                                        index=0,
+                                        delta=DeltaMessage(content=content)
+                                    )
+                                ]
+                            )
             
             # Final chunk to signal completion
             yield ChatCompletionChunk(
@@ -92,7 +144,7 @@ class OpenAIToKORAdapter:
             )
 
         except Exception as e:
-            logger.error(f"Error in adapter run: {e}")
+            logger.error(f"Error in adapter run: {e}", exc_info=True)
             yield ChatCompletionChunk(
                 model=request.model,
                 choices=[
@@ -107,18 +159,27 @@ class OpenAIToKORAdapter:
     async def run_chat_sync(self, request: ChatCompletionRequest) -> ChatCompletionResponse:
         """Runs the agent and returns a full OpenAI-compatible response."""
         
-        last_user_msg = next((m.content for m in reversed(request.messages) if m.role == "user"), "")
+        input_messages = self._convert_messages(request.messages)
         full_content = []
         
         try:
-            for event in self.runner.run(last_user_msg):
-                for node, details in event.items():
-                    if node in ["Coder", "Researcher"]:
-                        messages = details.get("messages", [])
-                        for msg in messages:
-                            content = getattr(msg, "content", "")
-                            if content:
-                                full_content.append(content)
+            graph_input = {"messages": input_messages}
+            
+            for event in self.runner.run(graph_input):
+                 for node, details in event.items():
+                    messages = details.get("messages", [])
+                    if not isinstance(messages, list):
+                        messages = [messages]
+                        
+                    for msg in messages:
+                        content = ""
+                        if hasattr(msg, "content"):
+                            content = msg.content
+                        elif isinstance(msg, str):
+                            content = msg
+                            
+                        if content:
+                            full_content.append(content)
             
             content_str = "\n".join(full_content)
             
@@ -132,14 +193,14 @@ class OpenAIToKORAdapter:
                     )
                 ],
                 usage=Usage(
-                    prompt_tokens=0,  # TODO: Implement token counting
+                    prompt_tokens=0, 
                     completion_tokens=0,
                     total_tokens=0
                 )
             )
 
         except Exception as e:
-            logger.error(f"Error in adapter run sync: {e}")
+            logger.error(f"Error in adapter run sync: {e}", exc_info=True)
             return ChatCompletionResponse(
                 model=request.model,
                 choices=[

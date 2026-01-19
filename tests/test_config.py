@@ -72,3 +72,60 @@ def test_config_save_load():
         new_manager = ConfigManager(config_path)
         new_config = new_manager.load()
         assert new_config.user.name == "TestUser"
+
+
+def test_config_update():
+    """Test in-memory update of configuration."""
+    manager = ConfigManager()
+    manager.load()
+    
+    manager.update({"user": {"name": "UpdatedUser"}})
+    assert manager.config.user.name == "UpdatedUser"
+
+
+def test_config_set_dot_notation():
+    """Test setting config values with dot notation."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_path = Path(tmpdir) / "test_set.toml"
+        manager = ConfigManager(config_path)
+        manager.load()
+        
+        manager.set("user.name", "DotNotationUser", persist=False)
+        assert manager.config.user.name == "DotNotationUser"
+
+
+def test_network_config_defaults():
+    """Test network configuration has sensible defaults."""
+    from kor_core.config import NetworkConfig
+    
+    network = NetworkConfig()
+    assert network.http_proxy is None
+    assert network.verify_ssl is True
+    assert network.connect_timeout == 30
+    assert network.read_timeout == 120
+
+
+def test_agent_definition():
+    """Test AgentDefinition schema."""
+    from kor_core.config import AgentDefinition
+    
+    agent = AgentDefinition(
+        name="TestAgent",
+        role="Test role",
+        goal="Test goal",
+        tools=["terminal", "browser"]
+    )
+    assert agent.name == "TestAgent"
+    assert len(agent.tools) == 2
+
+
+def test_empty_env_var_interpolation():
+    """Test env var interpolation with missing variable."""
+    manager = ConfigManager()
+    
+    # Non-existent env var should remain as-is
+    data = {"key": "${NONEXISTENT_VAR}"}
+    interpolated = manager._interpolate_env_vars(data)
+    # Should keep the placeholder or return empty depending on implementation
+    assert interpolated["key"] == "${NONEXISTENT_VAR}" or interpolated["key"] == ""
+

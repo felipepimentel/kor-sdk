@@ -2,9 +2,11 @@
 FastAPI application for KOR OpenAI-Compatible API.
 """
 
+import os
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 
 from .routes.chat import router as chat_router
@@ -14,11 +16,46 @@ from .routes.models import router as models_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# API Key from environment (optional)
+API_KEY = os.getenv("KOR_API_KEY", None)
+
+
+class APIKeyMiddleware(BaseHTTPMiddleware):
+    """Middleware to validate API key if KOR_API_KEY is set."""
+    
+    async def dispatch(self, request: Request, call_next):
+        from starlette.responses import JSONResponse
+        
+        # Skip auth for health check
+        if request.url.path == "/health":
+            return await call_next(request)
+        
+        if API_KEY:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return JSONResponse(
+                    status_code=401,
+                    content={"error": {"message": "Missing API key", "type": "auth_error"}}
+                )
+            
+            provided_key = auth_header.replace("Bearer ", "")
+            if provided_key != API_KEY:
+                return JSONResponse(
+                    status_code=401,
+                    content={"error": {"message": "Invalid API key", "type": "auth_error"}}
+                )
+        
+        return await call_next(request)
+
+
 app = FastAPI(
     title="KOR OpenAI-Compatible API",
     description="Exposes KOR agents via REST API",
     version="0.1.0"
 )
+
+# Add auth middleware
+app.add_middleware(APIKeyMiddleware)
 
 # Enable CORS for generic access
 app.add_middleware(

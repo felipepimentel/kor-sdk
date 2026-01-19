@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
 
-from kor_core.tools.registry import ToolRegistry, ToolInfo, BM25Backend, RegexBackend
+from kor_core.tools.registry import ToolRegistry, ToolInfo
 from kor_core.tools.terminal import TerminalTool
 from kor_core.tools.browser import BrowserTool
 

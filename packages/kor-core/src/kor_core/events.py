@@ -1,3 +1,14 @@
+"""
+DEPRECATED: This module is kept for backward compatibility with apps/tui.
+For new code, use `kor_core.events.HookManager` and `kor_core.events.HookEvent` instead.
+"""
+import warnings
+warnings.warn(
+    "kor_core.events is deprecated. Use kor_core.events.hook instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from typing import Protocol, Any, Dict
 from enum import Enum
 from pydantic import BaseModel

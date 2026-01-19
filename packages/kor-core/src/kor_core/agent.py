@@ -1,3 +1,14 @@
+"""
+DEPRECATED: This module is kept for backward compatibility with apps/tui.
+For new code, use `kor_core.agent.runner.GraphRunner` instead.
+"""
+import warnings
+warnings.warn(
+    "kor_core.agent.AgentRuntime is deprecated. Use kor_core.GraphRunner instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from typing import AsyncGenerator, List, Dict, Any
 from .events import EventBus, EventType
 # In a real scenario, we would import langgraph components here.

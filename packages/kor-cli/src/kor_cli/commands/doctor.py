@@ -33,11 +33,11 @@ def doctor():
         # 2.1 Registry check
         from kor_core.tools import ToolRegistry
         tools_registry = kernel.registry.get_service("tools")
-        tool_count = len(tools_registry.list()) if tools_registry else 0
+        tool_count = len(tools_registry.get_all()) if tools_registry else 0
         table.add_row("Tool Registry", "[green]✔[/]", f"{tool_count} tools registered")
         
         agent_registry = kernel.registry.get_service("agents")
-        agent_count = len(agent_registry.list()) if agent_registry else 0
+        agent_count = len(agent_registry.list_agents()) if agent_registry else 0
         table.add_row("Agent Registry", "[green]✔[/]", f"{agent_count} agents available")
         
     except Exception as e:

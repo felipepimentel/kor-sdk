@@ -55,7 +55,7 @@ def test_agent_factory():
     
     # 3. Test Factory Node Creation
     print("\n[3] Testing Factory Node Creation...")
-    factory = AgentFactory(kernel)
+    factory = AgentFactory.from_kernel(kernel)
     
     node_func = factory.create_node("SecurityAnalyzer", custom_agent)
     

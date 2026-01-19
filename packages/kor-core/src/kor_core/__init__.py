@@ -17,6 +17,8 @@ from .api import (
     KorTool,
     TerminalTool,
     BrowserTool,
+    ToolRegistry,
+    ToolInfo,
     MCPClient,
     MCPManager,
     HookManager,
@@ -61,6 +63,8 @@ __all__ = [
     "KorTool",
     "TerminalTool",
     "BrowserTool",
+    "ToolRegistry",
+    "ToolInfo",
     "tool",
     
     # MCP
