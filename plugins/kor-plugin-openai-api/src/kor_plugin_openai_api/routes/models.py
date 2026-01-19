@@ -18,7 +18,7 @@ async def list_models():
     from kor_core.kernel import get_kernel
     kernel = get_kernel()
     try:
-        kernel.boot()
+        kernel.boot_sync()
     except Exception:
         pass
     

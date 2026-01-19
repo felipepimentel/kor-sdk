@@ -21,9 +21,6 @@ from ..schemas.chat import (
 
 logger = logging.getLogger(__name__)
 
-from kor_core import GraphRunner, Kernel
-
-# ...
 
 class OpenAIToKORAdapter:
     """Adapts OpenAI requests to KOR GraphRunner and vice versa."""
@@ -33,8 +30,8 @@ class OpenAIToKORAdapter:
         from kor_core.kernel import get_kernel
         self.kernel = get_kernel()
         try:
-            self.kernel.boot()
-            active_id = self.kernel.config.agent.active
+            self.kernel.boot_sync()
+            active_id = self.kernel.config.agent.active_graph
             agent_registry = self.kernel.registry.get_service("agents")
             self.graph = agent_registry.load_graph(active_id)
             self.runner = GraphRunner(graph=self.graph)

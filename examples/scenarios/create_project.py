@@ -28,7 +28,7 @@ async def run_scenario():
     from kor_plugin_llm_openai.provider import OpenAIProvider
     
     kernel = get_kernel()
-    kernel.boot()
+    await kernel.boot()
     
     # Manual Registration since we missed plugin loading
     kernel.llm_registry.register(OpenAIProvider())

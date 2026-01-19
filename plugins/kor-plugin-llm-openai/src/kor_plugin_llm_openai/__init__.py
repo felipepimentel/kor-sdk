@@ -8,7 +8,7 @@ class OpenAIPlugin(KorPlugin):
     
     @property
     def id(self) -> str:
-        return "kor-llm-openai"
+        return "kor-plugin-llm-openai"
 
     @property
     def provides(self) -> list[str]:

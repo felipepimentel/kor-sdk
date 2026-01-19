@@ -1,10 +1,10 @@
 {
-    "id": "kor-llm-openai",
-    "name": "openai-llm-provider",
+    "name": "kor-plugin-llm-openai",
     "version": "0.1.0",
-    "description": "OpenAI integration for KOR",
-    "entry_point": "src/kor_plugin_llm_openai/__init__.py",
+    "description": "OpenAI LLM provider integration for KOR",
+    "entry_point": "kor_plugin_llm_openai:OpenAIPlugin",
     "provides": [
         "llm-provider-openai"
-    ]
+    ],
+    "dependencies": []
 }

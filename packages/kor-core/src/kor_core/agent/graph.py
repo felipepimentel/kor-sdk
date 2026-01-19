@@ -12,7 +12,7 @@ def create_graph(checkpointer=None):
     
     # Ensure initialized (for CLI tool usage where boot might be manual)
     if not kernel._is_initialized:
-        kernel.boot()
+        kernel.boot_sync()
         
     factory = AgentFactory(kernel)
     workflow = StateGraph(AgentState)

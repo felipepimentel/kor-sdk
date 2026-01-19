@@ -60,7 +60,7 @@ def boot():
     with console.status("[bold green]Booting Kernel...[/]", spinner="dots"):
         kernel = Kernel()
         kernel.loader.register_plugin_class(HelloWorldPlugin)
-        kernel.boot()
+        kernel.boot_sync()
         time.sleep(0.5)
     
     console.print(f"[bold]Session User:[/bold] {kernel.config.user.name or 'Guest'}")

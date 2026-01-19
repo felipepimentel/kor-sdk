@@ -54,11 +54,25 @@ class Kernel:
         self.model_selector = None
 
     def request_permission(self, action: str, details: Any) -> bool:
-        """Requests permission for a sensitive action."""
+        """
+        Requests permission for a sensitive action.
+        
+        Security behavior:
+        - If permission_callback is set, it decides
+        - If paranoid_mode is enabled, always deny
+        - Otherwise, warn and allow (for development convenience)
+        """
         if self.permission_callback:
             return self.permission_callback(action, details)
         
-        return True # Default to true for now if not set
+        # No callback set - check security policy
+        if self.config.security.paranoid_mode:
+            logger.warning(f"Permission DENIED (paranoid_mode=true): {action}")
+            return False
+        
+        # Non-paranoid: warn and allow for development convenience
+        logger.warning(f"No permission callback set. Allowing action: {action}")
+        return True
 
     def _register_core_tools(self):
         """Register built-in tools and services."""
@@ -89,8 +103,8 @@ class Kernel:
         plugins_dir = config_dir / "plugins"
         self.loader.load_directory_plugins(plugins_dir)
 
-    def boot(self):
-        """Starts the kernel lifecycle."""
+    async def boot(self):
+        """Starts the kernel lifecycle (asynchronous)."""
         if self._is_initialized:
             return
         
@@ -124,13 +138,56 @@ class Kernel:
         self._is_initialized = True
         
         # Emit on_boot hook
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            loop.create_task(self.hooks.emit(HookEvent.ON_BOOT))
-        else:
-            loop.run_until_complete(self.hooks.emit(HookEvent.ON_BOOT))
+        await self.hooks.emit(HookEvent.ON_BOOT)
         
         logger.info("KOR Kernel Ready.")
+
+    def boot_sync(self):
+        """
+        Starts the kernel lifecycle (synchronous wrapper).
+        Use this in non-async contexts.
+        """
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # We are in an async context but called sync boot.
+                # This is tricky in Python. We'll try to use a task for the hooks.
+                self._boot_sequential_sync()
+                loop.create_task(self.hooks.emit(HookEvent.ON_BOOT))
+            else:
+                loop.run_until_complete(self.boot())
+        except RuntimeError:
+            # No loop exists
+            asyncio.run(self.boot())
+
+    def _boot_sequential_sync(self):
+        """Internal helper for sync boot setup (excluding async hooks)."""
+        if self._is_initialized:
+            return
+            
+        from .plugin.manifest import AgentDefinition
+        self.agent_registry.register(AgentDefinition(
+            id="default-supervisor",
+            name="Default Supervisor",
+            description="Standard supervisor with Coder and Researcher",
+            entry="kor_core.agent.graph:create_graph"
+        ))
+
+        self.load_plugins()
+        self.loader.load_plugins(self.context)
+        
+        from .llm import ModelSelector
+        self.model_selector = ModelSelector(self.llm_registry, self.config.llm)
+        
+        from .agent.persistence import get_checkpointer
+        self.checkpointer = get_checkpointer(self.config.persistence)
+        self.registry.register_service("checkpointer", self.checkpointer)
+        
+        from .prompts import PromptLoader
+        PromptLoader.export_defaults()
+        
+        self._is_initialized = True
+
 
     async def shutdown(self):
         """Shuts down the kernel."""
@@ -143,12 +200,41 @@ class Kernel:
         await self.hooks.emit(HookEvent.ON_SHUTDOWN)
         self._is_initialized = False
 
-def get_kernel():
-    """Returns the global Kernel instance."""
-    global _kernel_instance
-    if _kernel_instance is None:
-        from .kernel import Kernel
-        _kernel_instance = Kernel()
-    return _kernel_instance
 
-_kernel_instance: Optional["Kernel"] = None
+# Singleton management using contextvars for async-safe isolation
+from contextvars import ContextVar
+
+_kernel_context: ContextVar[Optional["Kernel"]] = ContextVar("kor_kernel", default=None)
+
+
+def get_kernel() -> "Kernel":
+    """
+    Returns the global Kernel instance.
+    
+    Uses contextvars for async-safe isolation, allowing each async context
+    to have its own kernel instance if needed.
+    """
+    kernel = _kernel_context.get()
+    if kernel is None:
+        kernel = Kernel()
+        _kernel_context.set(kernel)
+    return kernel
+
+
+def set_kernel(kernel: "Kernel") -> None:
+    """
+    Sets the global Kernel instance.
+    
+    Useful for testing or when using a pre-configured kernel.
+    """
+    _kernel_context.set(kernel)
+
+
+def reset_kernel() -> None:
+    """
+    Resets the global Kernel instance.
+    
+    Primarily used for testing to ensure a clean state between tests.
+    """
+    _kernel_context.set(None)
+

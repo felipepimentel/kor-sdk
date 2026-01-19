@@ -22,7 +22,7 @@ async def validate_sdk():
     # 2. Kernel Boot
     try:
         kernel = get_kernel()
-        kernel.boot()
+        await kernel.boot()
         print("\n[2] Kernel Boot: OK")
     except Exception as e:
         print(f"\n[2] Kernel Boot: FAILED ({e})")

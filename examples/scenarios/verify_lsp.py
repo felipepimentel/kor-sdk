@@ -27,7 +27,7 @@ dp.process("hello")
     
     # 2. Boot Kernel
     kernel = get_kernel()
-    kernel.boot()
+    await kernel.boot()
     
     # 3. Get Tools
     hover_tool = LSPHoverTool()

@@ -16,7 +16,7 @@ def test_kernel_initialization():
 def test_kernel_boot():
     """Test that Kernel boots successfully."""
     kernel = Kernel()
-    kernel.boot()
+    kernel.boot_sync()
     assert kernel._is_initialized is True
 
 def test_config_manager():

@@ -197,8 +197,11 @@ class ConfigManager:
         
         return resolve(data)
 
-    def save(self) -> None:
-        """Saves current configuration to disk."""
+    def save(self, config: Optional[KorConfig] = None) -> None:
+        """Saves configuration to disk."""
+        if config:
+            self._config = config
+            
         try:
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_path, "wb") as f:

@@ -8,7 +8,7 @@ class LiteLLMPlugin(KorPlugin):
     
     @property
     def id(self) -> str:
-        return "kor-llm-litellm"
+        return "kor-plugin-llm-litellm"
 
     @property
     def provides(self) -> list[str]:

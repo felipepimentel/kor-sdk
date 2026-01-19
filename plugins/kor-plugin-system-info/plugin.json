@@ -1,6 +1,10 @@
 {
     "name": "kor-plugin-system-info",
     "version": "0.1.0",
+    "description": "Provides system information tools to agents.",
     "entry_point": "kor_plugin_system_info:SystemInfoPlugin",
-    "description": "Provides system information tools to agents."
+    "provides": [
+        "system-info"
+    ],
+    "dependencies": []
 }

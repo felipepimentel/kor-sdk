@@ -14,6 +14,19 @@ from .agent.state import AgentState
 from .tools import TerminalTool, BrowserTool, KorTool
 from .mcp import MCPClient, MCPManager
 from .events import HookManager, HookEvent
+from .exceptions import (
+    KorError,
+    ConfigurationError,
+    PluginError,
+    PluginLoadError,
+    PluginInitError,
+    ToolError,
+    ToolExecutionError,
+    ToolNotFoundError,
+    AgentError,
+    LLMError,
+    PermissionDeniedError,
+)
 
 __all__ = [
     # Core
@@ -43,4 +56,18 @@ __all__ = [
     # Events
     "HookManager",
     "HookEvent",
+    
+    # Exceptions
+    "KorError",
+    "ConfigurationError",
+    "PluginError",
+    "PluginLoadError",
+    "PluginInitError",
+    "ToolError",
+    "ToolExecutionError",
+    "ToolNotFoundError",
+    "AgentError",
+    "LLMError",
+    "PermissionDeniedError",
 ]
+

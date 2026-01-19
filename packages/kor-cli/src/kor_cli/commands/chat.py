@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from kor_core import GraphRunner, Kernel
-from kor_core.agent.persistence import get_sqlite_checkpointer
+from kor_core.agent.persistence import get_checkpointer
 from kor_core.agent.graph import create_graph
 
 console = Console()
@@ -16,7 +16,7 @@ def chat():
     # Boot Kernel to load plugins/agents
     from kor_core.kernel import get_kernel
     kernel = get_kernel()
-    kernel.boot()
+    kernel.boot_sync()
 
     # 2. Setup Permission Handler (HITL)
     def ask_permission(action: str, details: Any) -> bool:
@@ -28,10 +28,10 @@ def chat():
     kernel.permission_callback = ask_permission
     
     # 3. Setup Persistence
-    checkpointer = get_sqlite_checkpointer()
+    checkpointer = get_checkpointer(kernel.config.persistence)
     
     # Resolve active agent
-    active_agent_id = kernel.config.agent.active
+    active_agent_id = kernel.config.agent.active_graph
     console.print(Panel(f"Starting KOR Agent: [bold]{active_agent_id}[/bold] (Persistent)", style="bold purple"))
     
     try:
@@ -82,4 +82,5 @@ def chat():
 
         console.print("[bold purple]Goodbye![/]")
     finally:
-        kernel.shutdown()
+        import asyncio
+        asyncio.run(kernel.shutdown())

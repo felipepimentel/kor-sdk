@@ -2,15 +2,11 @@
     "name": "kor-plugin-tui",
     "version": "0.1.0",
     "description": "Textual User Interface for KOR",
-    "commands": [
-        {
-            "name": "tui",
-            "description": "Launch the TUI chat interface",
-            "entry": "kor_plugin_tui.app:run"
-        }
+    "entry_point": "kor_plugin_tui.app:run",
+    "provides": [
+        "tui-interface"
     ],
-    "dependencies": {
-        "kor-core": ">=0.1.0",
-        "textual": ">=0.40.0"
-    }
+    "dependencies": [
+        "kor-core"
+    ]
 }

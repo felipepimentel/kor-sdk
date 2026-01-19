@@ -17,4 +17,15 @@ kor-plugin-openai-api = { path = "plugins/kor-plugin-openai-api", editable = tru
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.23.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "examples/scenarios"]
+python_files = ["test_*.py", "verify_*.py"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+

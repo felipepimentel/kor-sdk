@@ -1,18 +1,12 @@
 {
-    "id": "kor-plugin-openai-api",
     "name": "kor-plugin-openai-api",
     "version": "0.1.0",
     "description": "Exposes KOR agents via an OpenAI-compatible REST API",
-    "author": "KOR Team",
-    "commands": [
-        {
-            "name": "openai-api",
-            "description": "Start the OpenAI-compatible API server",
-            "entry": "kor_plugin_openai_api.main:run"
-        }
+    "entry_point": "kor_plugin_openai_api.main:run",
+    "provides": [
+        "openai-api-server"
     ],
-    "hooks": [],
-    "dependencies": {
-        "kor-core": ">=0.1.0"
-    }
+    "dependencies": [
+        "kor-core"
+    ]
 }

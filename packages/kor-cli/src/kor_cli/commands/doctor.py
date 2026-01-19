@@ -27,7 +27,7 @@ def doctor():
     try:
         from kor_core.kernel import get_kernel
         kernel = get_kernel()
-        kernel.boot()
+        kernel.boot_sync()
         table.add_row("KOR Kernel", "[green]✔[/]", "Booted successfully")
         
         # 2.1 Registry check

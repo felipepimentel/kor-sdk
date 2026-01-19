@@ -20,6 +20,7 @@ class PluginLoader:
         self._plugins: Dict[str, KorPlugin] = {}
         self._discovered_classes: List[Type[KorPlugin]] = []
         self._discovered_agents: List[AgentDefinition] = []
+        self._discovered_manifests: Dict[str, PluginManifest] = {}
 
     def register_plugin_class(self, plugin_cls: Type[KorPlugin]):
         """Manually register a plugin class."""
@@ -65,6 +66,7 @@ class PluginLoader:
         
         manifest = PluginManifest(**data)
         logger.info(f"Discovered plugin: {manifest.name} v{manifest.version}")
+        self._discovered_manifests[manifest.name] = manifest
 
         # Store agents
         if manifest.agents:

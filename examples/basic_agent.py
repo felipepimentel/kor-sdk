@@ -9,7 +9,7 @@ from kor_core import Kernel, GraphRunner
 def main():
     # 1. Initialize the Kernel
     kernel = Kernel()
-    kernel.boot()
+    kernel.boot_sync()
     
     print(f"Kernel booted. User: {kernel.config.user.name or 'Guest'}")
     
