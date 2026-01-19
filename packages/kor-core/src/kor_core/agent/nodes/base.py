@@ -27,15 +27,5 @@ def get_tool_from_registry(name: str):
     if name == "browser": return BrowserTool()
     return None
 
-def get_best_tool_for_node(node_name: str, task_context: str = "") -> Any:
-    """Discovers the best tool for a given node based on defaults or registry."""
-    defaults = {
-        "Coder": "terminal",
-        "Researcher": "browser",
-        "Explorer": "search_tools",
-        "Architect": "search_symbols",
-        "Reviewer": "terminal"
-    }
-    
-    tool_name = defaults.get(node_name)
-    return get_tool_from_registry(tool_name) if tool_name else None
+    if name == "browser": return BrowserTool()
+    return None

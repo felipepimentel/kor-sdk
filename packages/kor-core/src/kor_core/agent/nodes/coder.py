@@ -1,7 +1,6 @@
-from langchain_core.messages import HumanMessage
 from ...kernel import get_kernel
 from ..state import AgentState
-from .base import get_tool_from_registry, get_best_tool_for_node
+from .base import get_tool_from_registry
 
 def coder_node(state: AgentState):
     """Coder Worker. Translates Spec to Code."""
@@ -68,14 +67,8 @@ def coder_node(state: AgentState):
             "next_step": "Reviewer"
         }
 
-    # 3. Fallback / Legacy Mode
-    tool = get_best_tool_for_node("Coder", last_msg)
-    response = "I am ready to code."
-    if "list" in last_msg.lower():
-        output = tool._run("ls -la") if tool else "No tool available"
-        response = f"Listing files:\n{output}"
-    
+    # Default fallback if no spec/errors (shouldn't happen in normal flow but safe return)
     return {
-        "messages": [HumanMessage(content=f"[Coder] {response}", name="Coder")],
+        "messages": [HumanMessage(content="[Coder] No task (spec/errors) to process.", name="Coder")],
         "next_step": "Supervisor"
     }
