@@ -72,7 +72,7 @@ class AgentConfig(BaseConfig):
     active_graph: str = "default-supervisor"
     
     # List of active workers for the supervisor
-    supervisor_members: list[str] = ["Architect", "Coder", "Reviewer", "Researcher"]
+    supervisor_members: list[str] = ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
     
     # Dynamic definitions: name -> definition
     definitions: Dict[str, AgentDefinition] = Field(default_factory=dict)

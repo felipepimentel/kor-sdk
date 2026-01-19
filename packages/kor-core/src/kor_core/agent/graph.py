@@ -24,7 +24,7 @@ def create_graph(checkpointer=None):
     workflow.add_node("ExternalToolExecutor", external_tool_executor_node)
     
     # 3. Add Member Nodes (Dynamic from config)
-    members = kernel.config.agent.supervisor_members or ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
+    members = kernel.config.agent.supervisor_members
     
     # 4. Dynamic Conditional Edges
     conditional_map = {name: name for name in members}

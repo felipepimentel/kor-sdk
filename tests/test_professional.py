@@ -30,8 +30,17 @@ def test_professional_flow():
     kernel.boot_sync()
     
     # 3. Test Cycle with Mocks
-    # We patch supervisor_node to test transitions
-    with patch("kor_core.agent.graph.supervisor_node") as mock_sup:
+    # We patch supervisor_node to test transitions and factory to avoid real LLM usage
+    with patch("kor_core.agent.graph.supervisor_node") as mock_sup, \
+         patch("kor_core.agent.factory.AgentFactory.create_node") as mock_create_node:
+         
+        # Setup dummy node that returns serializable data
+        def dummy_node(state):
+            from langchain_core.messages import AIMessage
+            return {"messages": [AIMessage(content="I found some tools.", name="Researcher")]}
+            
+        mock_create_node.return_value = dummy_node
+
         checkpointer = get_checkpointer(kernel.config.persistence)
         graph = create_graph(checkpointer=checkpointer)
         runner = GraphRunner(graph=graph)

@@ -17,7 +17,7 @@ def supervisor_node(state: AgentState):
     kernel = get_kernel()
     
     # Get dynamic members from config
-    members = kernel.config.agent.supervisor_members or ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
+    members = kernel.config.agent.supervisor_members
     
     # Add ExternalToolExecutor if external tools are available
     external_tools = state.get("external_tools", [])

@@ -26,18 +26,40 @@ class OpenAIToKORAdapter:
     """Adapts OpenAI requests to KOR GraphRunner and vice versa."""
 
     def __init__(self):
-        # We need to boot the kernel to get the registry and config
-        from kor_core.kernel import get_kernel
-        self.kernel = get_kernel()
+        self.kernel = None
+        self.graph = None
+        self.runner = None
+        
+    def _ensure_initialized(self):
+        """Lazily initialize the kernel and graph."""
+        if self.runner:
+            return
+            
         try:
+            # We need to boot the kernel to get the registry and config
+            from kor_core.kernel import get_kernel
+            from kor_core.agent.graph import create_graph
+            
+            self.kernel = get_kernel()
             self.kernel.boot_sync()
+            
             active_id = self.kernel.config.agent.active_graph
             agent_registry = self.kernel.registry.get_service("agents")
-            self.graph = agent_registry.load_graph(active_id)
+            
+            # Check if it's the internal supervisor or an external graph
+            if active_id == "default-supervisor":
+                # Ensure checkingpointer is available
+                checkpointer = self.kernel.registry.get_service("checkpointer") if self.kernel.registry.has_service("checkpointer") else None
+                self.graph = create_graph(checkpointer=checkpointer)
+            else:
+                 self.graph = agent_registry.load_graph(active_id)
+
             self.runner = GraphRunner(graph=self.graph)
+            logger.info(f"Initialized OpenAIToKORAdapter with agent: {active_id}")
+            
         except Exception as e:
             logger.error(f"Failed to initialize agent graph: {e}")
-            # Fallback to default if boot/load fails
+            # Fallback to empty runner if boot/load fails
             self.runner = GraphRunner()
 
     def _convert_messages(self, messages: List[Message]) -> List[BaseMessage]:
@@ -61,6 +83,7 @@ class OpenAIToKORAdapter:
 
     async def run_chat(self, request: ChatCompletionRequest) -> AsyncGenerator[ChatCompletionChunk, None]:
         """Runs the agent and yields OpenAI-compatible chunks."""
+        self._ensure_initialized()
         
         # 1. Convert Inputs
         input_messages = self._convert_messages(request.messages)
@@ -158,6 +181,7 @@ class OpenAIToKORAdapter:
 
     async def run_chat_sync(self, request: ChatCompletionRequest) -> ChatCompletionResponse:
         """Runs the agent and returns a full OpenAI-compatible response."""
+        self._ensure_initialized()
         
         input_messages = self._convert_messages(request.messages)
         full_content = []
