@@ -104,23 +104,16 @@ class PluginLoader:
                 path_to_remove = str(root_dir)
                 
             try:
-                # Handle "module:Class" syntax
-                if ":" in manifest.entry_point:
+                # Handle "module:Class" syntax (required format)
+                if ":" not in manifest.entry_point:
+                    logger.error(f"Invalid entry_point format '{manifest.entry_point}'. Use 'module:Class' format.")
+                else:
                     module_name, class_name = manifest.entry_point.split(":")
                     module = importlib.import_module(module_name)
                     plugin_cls = getattr(module, class_name)
                     if isinstance(plugin_cls, type) and issubclass(plugin_cls, KorPlugin):
                         self.register_plugin_class(plugin_cls)
-                else:
-                    # Legacy: import module and scan for subclasses
-                    module_name = manifest.entry_point.replace(".py", "").replace("/", ".")
-                    module = importlib.import_module(module_name)
-                    # Look for KorPlugin subclasses in the module
-                    for attribute_name in dir(module):
-                        attribute = getattr(module, attribute_name)
-                        if isinstance(attribute, type) and issubclass(attribute, KorPlugin) and attribute is not KorPlugin:
-                            self.register_plugin_class(attribute)
-                            
+                             
             except Exception as e:
                 logger.error(f"Failed to load entry point {manifest.entry_point} for {manifest.name}: {e}")
             finally:

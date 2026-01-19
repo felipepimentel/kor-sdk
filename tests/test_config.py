@@ -44,19 +44,6 @@ def test_config_validation_pydantic():
     with pytest.raises(Exception):
         config.security.paranoid_mode = "not-a-bool"
 
-def test_legacy_migration():
-    """Test migration of legacy [model] section to [llm]."""
-    manager = ConfigManager()
-    legacy_data = {
-        "model": {
-            "provider": "openai",
-            "name": "gpt-4"
-        }
-    }
-    migrated = manager._migrate_legacy_config(legacy_data)
-    assert "llm" in migrated
-    assert migrated["llm"]["default"]["provider"] == "openai"
-    assert "model" not in migrated
 
 def test_config_save_load():
     """Test saving and then loading configuration."""

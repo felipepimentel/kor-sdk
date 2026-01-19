@@ -29,17 +29,6 @@ def test_manifest_validation():
     assert manifest.name == "test-plugin"
     assert manifest.provides == ["test-cap"]
 
-def test_manifest_backward_compatibility():
-    """Test manifest validation handles old dict-style dependencies."""
-    data = {
-        "name": "legacy-plugin",
-        "version": "1.0.0",
-        "description": "Legacy",
-        "entry_point": "legacy:Plugin",
-        "dependencies": {"kor-core": ">=0.1.0"}
-    }
-    manifest = PluginManifest(**data)
-    assert manifest.dependencies == ["kor-core"]
 
 def test_loader_directory_discovery():
     """Test that PluginLoader discovers plugins in a directory."""

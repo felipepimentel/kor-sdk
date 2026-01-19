@@ -64,12 +64,3 @@ class PluginManifest(BaseModel):
     hooks_path: str = "hooks.json"
     mcp_path: str = ".mcp.json"
     lsp_path: str = ".lsp.json"
-    
-    @field_validator('dependencies', mode='before')
-    @classmethod
-    def normalize_dependencies(cls, v):
-        """Convert dict-style dependencies to list for backward compatibility."""
-        if isinstance(v, dict):
-            # Convert {"kor-core": ">=0.1.0"} to ["kor-core"]
-            return list(v.keys())
-        return v

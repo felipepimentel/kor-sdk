@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from .nodes import supervisor_node, coder_node, researcher_node, explorer_node, architect_node, reviewer_node, external_tool_executor_node
+from .nodes import supervisor_node, external_tool_executor_node
 from .factory import AgentFactory
 from ..kernel import get_kernel
 
@@ -14,63 +14,45 @@ def create_graph(checkpointer=None):
     if not kernel._is_initialized:
         kernel.boot_sync()
         
-    factory = AgentFactory(kernel)
+    factory = AgentFactory.from_kernel(kernel)
     workflow = StateGraph(AgentState)
     
     # 1. Add Supervisor (Always present)
-    # Ideally, supervisor itself should be configurable/dynamic too.
-    # For V1, we keep the robust 'supervisor_node' from nodes.py
-    # but we might want to inject the DYNAMIC list of members into it.
     workflow.add_node("Supervisor", supervisor_node)
     
     # 2. Add ExternalToolExecutor (For client-side tools)
     workflow.add_node("ExternalToolExecutor", external_tool_executor_node)
     
-    # 3. Add Member Nodes (Dynamic)
-    # We read from config.agent.supervisor_members
-    # Fallback to defaults if empty?
+    # 3. Add Member Nodes (Dynamic from config)
     members = kernel.config.agent.supervisor_members or ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
     
-    # Legacy mapping for hardcoded nodes
-    legacy_nodes = {
-        "Coder": coder_node,
-        "Researcher": researcher_node,
-        "Explorer": explorer_node,
-        "Architect": architect_node,
-        "Reviewer": reviewer_node
-    }
-
     # 4. Dynamic Conditional Edges
-    # Map each member name to itself to support the Supervisor's routing logic
     conditional_map = {name: name for name in members}
     conditional_map["FINISH"] = END
     conditional_map["Supervisor"] = "Supervisor"
     conditional_map["ExternalToolExecutor"] = "ExternalToolExecutor"
 
     for member_name in members:
-        node_func = None
-        
-        # A. Check for Configured Custom Definition
+        # Get or create agent definition from config
         if member_name in kernel.config.agent.definitions:
             definition = kernel.config.agent.definitions[member_name]
-            node_func = factory.create_node(member_name, definition)
+        else:
+            # Create default definition for known agents
+            from ..config import AgentDefinition
+            definition = AgentDefinition(
+                name=member_name,
+                role=f"You are the {member_name} agent.",
+                goal=f"Fulfill the {member_name} role.",
+                tools=[]
+            )
             
-        # B. Fallback to Legacy Hardcoded Node
-        elif member_name in legacy_nodes:
-            node_func = legacy_nodes[member_name]
-            
-        # C. Critical Error if unknown
-        if not node_func:
-            print(f"Warning: Agent '{member_name}' has no definition and is not a built-in.")
-            continue
-            
+        node_func = factory.create_node(member_name, definition)
         workflow.add_node(member_name, node_func)
         
-        # Hub & Spoke Wiring: Specific nodes define their own routing via 'next_step'
+        # Hub & Spoke Wiring: Specific nodes define their own routing
         if member_name in ["Architect", "Coder", "Reviewer"]:
              workflow.add_conditional_edges(member_name, lambda x: x["next_step"], conditional_map)
         else:
-             # Default Workers always report back to supervisor
              workflow.add_edge(member_name, "Supervisor")
     
     # We need to ensure supervisor_node uses the CORRECT list of members in its prompt.

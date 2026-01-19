@@ -153,8 +153,7 @@ class ConfigManager:
             with open(self.config_path, "rb") as f:
                 data = tomllib.load(f)
             
-            # Migration and Interpolation
-            data = self._migrate_legacy_config(data)
+            # Environment variable interpolation
             data = self._interpolate_env_vars(data)
             
             self._config = KorConfig(**data)
@@ -171,35 +170,6 @@ class ConfigManager:
             # Only warn if no LLM configured at all, as it might be fine for some use cases
             logger.warning("No default LLM configuration found ([llm.default]). AI features may fail.")
 
-    def _migrate_legacy_config(self, data: dict) -> dict:
-        """Migrate old [model] format to new [llm] format."""
-        if "model" in data and "llm" not in data:
-            logger.info("Migrating legacy [model] config to [llm] structure...")
-            old = data.pop("model")
-            
-            # Map legacy provider names to new structure
-            provider_name = old.get("provider", "openai")
-            model_name = old.get("name", "gpt-4-turbo")
-            temp = old.get("temperature", 0.7)
-            
-            data["llm"] = {
-                "default": {
-                    "provider": provider_name,
-                    "model": model_name,
-                    "temperature": temp,
-                },
-                "providers": {},
-                "purposes": {}
-            }
-            
-            # Migrate secrets to provider config if valid
-            secrets = data.get("secrets", {})
-            if provider_name == "openai" and secrets.get("openai_api_key"):
-                 data["llm"]["providers"]["openai"] = {"api_key": secrets["openai_api_key"]}
-            elif provider_name == "anthropic" and secrets.get("anthropic_api_key"):
-                 data["llm"]["providers"]["anthropic"] = {"api_key": secrets["anthropic_api_key"]}
-                 
-        return data
 
     def _interpolate_env_vars(self, data: Any) -> Any:
         """Resolve ${VAR} or $VAR patterns from environment."""
