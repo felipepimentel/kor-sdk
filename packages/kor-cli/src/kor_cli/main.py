@@ -29,31 +29,6 @@ console = Console()
 # Global hook manager for CLI events
 cli_hooks = HookManager()
 
-# --- Simulation of a defined Plugin ---
-class HelloWorldPlugin(KorPlugin):
-    id = "hello-world"
-    
-    def initialize(self, context: KorContext):
-        context.registry.register_service("greeter", self.greet)
-
-    def greet(self, name: str):
-        return f"Hello, {name} from KOR!"
-
-@click.group()
-@click.pass_context
-def main(ctx):
-    """KOR - The Developer Operating System"""
-    ctx.ensure_object(dict)
-    ctx.obj['start_time'] = time.time()
-    # Emit pre_command
-    asyncio.get_event_loop().run_until_complete(cli_hooks.emit(HookEvent.PRE_COMMAND))
-
-@main.result_callback()
-@click.pass_context
-def process_result(ctx, result):
-    """Called after any command completes."""
-    asyncio.get_event_loop().run_until_complete(cli_hooks.emit(HookEvent.POST_COMMAND))
-
 @main.command()
 def boot():
     """Boots the Kernel and runs diagnostics."""
@@ -61,7 +36,6 @@ def boot():
     
     with console.status("[bold green]Booting Kernel...[/]", spinner="dots"):
         kernel = Kernel()
-        kernel.loader.register_plugin_class(HelloWorldPlugin)
         kernel.boot_sync()
         time.sleep(0.5)
     

@@ -18,8 +18,7 @@ def get_tool_from_registry(name: str):
                 tool = tool_info.tool_class()
                 if hasattr(tool, "registry"): tool.registry = registry
                 return tool
-    except Exception as e:
-        # print(f"Tool lookup error: {e}")
+    except Exception:
         pass
     
     # Fallbacks for built-in tools if registry is missing

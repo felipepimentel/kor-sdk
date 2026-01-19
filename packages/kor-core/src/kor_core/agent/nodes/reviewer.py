@@ -19,7 +19,7 @@ async def reviewer_node(state: AgentState):
     
     try:
         llm = kernel.model_selector.get_model("coding")
-    except:
+    except Exception:
         return {
             "messages": [HumanMessage(content=f"[Reviewer] PASS (Mock)", name="Reviewer")],
             "next_step": "Supervisor"

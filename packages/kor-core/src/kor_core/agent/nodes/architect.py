@@ -14,7 +14,7 @@ def architect_node(state: AgentState):
     
     try:
         llm = kernel.model_selector.get_model("coding") 
-    except:
+    except Exception:
         spec = f"SPECIFICATION (Mock) for: {last_msg}\n1. Create component.\n2. Add props."
         return {
             "messages": [HumanMessage(content=f"[Architect] {spec}", name="Architect")],
