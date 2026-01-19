@@ -1,4 +1,3 @@
-from typing import Any
 from ...kernel import get_kernel
 from ...tools.terminal import TerminalTool
 from ...tools.browser import BrowserTool

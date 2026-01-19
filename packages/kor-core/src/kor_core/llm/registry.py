@@ -31,6 +31,10 @@ class LLMRegistry:
         """Retrieves a provider by name."""
         return self._providers.get(name)
 
+    def get(self, name: str) -> Optional[BaseLLMProvider]:
+        """Alias for get_provider."""
+        return self.get_provider(name)
+
     def list_providers(self) -> List[str]:
         """Returns a list of registered provider names."""
         return list(self._providers.keys())

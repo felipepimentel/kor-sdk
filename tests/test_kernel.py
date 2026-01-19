@@ -4,7 +4,6 @@ Kernel Tests
 Basic smoke tests for the KOR Kernel.
 """
 
-import pytest
 from kor_core import Kernel, ConfigManager, KorConfig
 
 def test_kernel_initialization():

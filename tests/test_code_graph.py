@@ -1,5 +1,4 @@
 import sys
-import time
 from pathlib import Path
 def test_code_graph():
     # Add scripts path for import

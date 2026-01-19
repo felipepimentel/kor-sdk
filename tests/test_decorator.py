@@ -3,7 +3,6 @@ Tests for the @tool decorator.
 
 Validates that the decorator correctly creates tool classes from functions.
 """
-import pytest
 from kor_core.tools.decorators import tool
 from kor_core.tools.base import KorTool
 

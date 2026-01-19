@@ -1,18 +1,16 @@
 import click
 import sys
-import platform
 import subprocess
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
-from kor_core import Kernel
 
 console = Console()
 
 @click.command()
 def doctor():
     """Runs diagnostics to ensure KOR is healthy."""
-    console.print(f"[bold blue]KOR Diagnostic Tool[/]\n")
+    console.print("[bold blue]KOR Diagnostic Tool[/]\n")
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")
@@ -31,7 +29,6 @@ def doctor():
         table.add_row("KOR Kernel", "[green]✔[/]", "Booted successfully")
         
         # 2.1 Registry check
-        from kor_core.tools import ToolRegistry
         tools_registry = kernel.registry.get_service("tools")
         tool_count = len(tools_registry.get_all()) if tools_registry else 0
         table.add_row("Tool Registry", "[green]✔[/]", f"{tool_count} tools registered")

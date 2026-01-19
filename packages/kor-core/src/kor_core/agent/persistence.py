@@ -1,10 +1,8 @@
 """
 Persistence utility for KOR agents using LangGraph SqliteSaver.
 """
-import os
 import sqlite3
 from pathlib import Path
-from typing import Optional
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.sqlite import SqliteSaver
 from ..config import PersistenceConfig

@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "kor-core" / 
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "kor-cli" / "src"))
 
 from kor_core.kernel import Kernel, reset_kernel
-from kor_core.config import KorConfig, LLMConfig
+from kor_core.config import KorConfig
 from kor_core.llm.registry import LLMRegistry
 
 @pytest.fixture(scope="function")

@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
 
-from kor_core.config import ConfigManager, KorConfig, LLMConfig, AgentConfig
+from kor_core.config import ConfigManager, KorConfig, AgentConfig
 
 def test_configuration_system():
     """Test configuration loading and validation."""

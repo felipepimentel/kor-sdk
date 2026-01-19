@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any, Dict, TypeVar, Type
+from typing import List, Optional, Any, Dict, TypeVar, Type, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..tools.registry import ToolRegistry
+    from ..llm.registry import LLMRegistry
+    from ..agent.registry import AgentRegistry
 
 T = TypeVar("T")
 

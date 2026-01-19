@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict, Union
-from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
+from pydantic import BaseModel, Field
 
 class PluginPermission(BaseModel):
     scope: str

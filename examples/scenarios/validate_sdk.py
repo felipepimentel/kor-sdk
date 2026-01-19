@@ -1,5 +1,4 @@
 import asyncio
-import os
 import shutil
 from pathlib import Path
 from kor_core.kernel import get_kernel

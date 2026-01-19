@@ -2,7 +2,7 @@ import asyncio
 import logging
 from enum import Enum
 from contextlib import AsyncExitStack
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from ..exceptions import ToolError

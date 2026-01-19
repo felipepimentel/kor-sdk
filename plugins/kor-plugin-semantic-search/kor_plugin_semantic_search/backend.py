@@ -1,5 +1,5 @@
 import logging
-from typing import List, TypeVar, Any
+from typing import List
 from kor_core.search import SearchBackend, T
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,6 @@ class ChromaDBBackend(SearchBackend[T]):
         # Reset collection to avoid stale data (simple strategy for V1)
         try:
              self._client.delete_collection(self.collection_name)
-             import chromadb
              from chromadb.utils import embedding_functions
              ef = embedding_functions.SentenceTransformerEmbeddingFunction(
                 model_name="all-MiniLM-L6-v2"

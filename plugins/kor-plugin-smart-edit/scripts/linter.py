@@ -1,7 +1,7 @@
 import subprocess
 import json
 import logging
-from typing import List, Optional, NamedTuple
+from typing import List, NamedTuple
 from pathlib import Path
 import ast
 

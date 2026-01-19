@@ -4,8 +4,11 @@ Command Registry
 Central registry for slash commands with search functionality.
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 import logging
+
+if TYPE_CHECKING:
+    from . import Command
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,6 @@ class CommandRegistry:
         Args:
             command: The Command object to register
         """
-        from . import Command
         
         if command.name in self._commands:
             logger.warning(f"Command '{command.name}' already registered. Overwriting.")

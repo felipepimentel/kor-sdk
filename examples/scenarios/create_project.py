@@ -1,7 +1,6 @@
 import sys
 import asyncio
 from pathlib import Path
-import os
 import shutil
 
 # Ensure we can import kor_core
@@ -60,7 +59,6 @@ async def run_scenario():
             # 2. Coder Response
             if "You are a Coder" in str(messages[0].content):
                 # We need to return TOOL CALLS for WriteFile
-                import json
                 tool_calls = [
                     {
                         "name": "write_file",
@@ -166,7 +164,7 @@ async def run_scenario():
         temperature=0.0
     )
     
-    print(f"Model Configured: Mock Scenario (Cost Effective)")
+    print("Model Configured: Mock Scenario (Cost Effective)")
     
     # 4. Define Output Path
     output_dir = sdk_root / "examples/out/neural-data-processor"

@@ -2,7 +2,7 @@
 Registry for discovered agents.
 """
 
-from typing import Dict, Optional, Callable, Any
+from typing import Dict, Optional, Any
 from ..plugin.manifest import AgentDefinition
 import importlib
 import logging
@@ -25,6 +25,13 @@ class AgentRegistry:
 
     def list_agents(self) -> Dict[str, AgentDefinition]:
         return self._agents
+
+    def get_agent(self, agent_id: str) -> Optional[AgentDefinition]:
+        return self._agents.get(agent_id)
+
+    def get(self, agent_id: str) -> Optional[AgentDefinition]:
+        """Alias for get_agent."""
+        return self.get_agent(agent_id)
 
     def load_graph(self, agent_id: str) -> Any:
         """Loads and compiles the graph for the given agent."""

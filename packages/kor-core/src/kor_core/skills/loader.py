@@ -4,7 +4,6 @@ Skill Loader
 Loads skills from filesystem directories (markdown files with YAML frontmatter).
 """
 
-import re
 from pathlib import Path
 from typing import List, Optional
 import logging

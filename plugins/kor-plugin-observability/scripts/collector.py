@@ -8,7 +8,6 @@ Collects and stores metrics for agents, tools, and sessions.
 import json
 import sqlite3
 import sys
-import os
 from datetime import datetime
 from pathlib import Path
 

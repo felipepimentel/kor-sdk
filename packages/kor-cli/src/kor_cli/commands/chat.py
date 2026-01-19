@@ -3,7 +3,7 @@ from typing import Any
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from kor_core import GraphRunner, Kernel
+from kor_core import GraphRunner
 from kor_core.agent.persistence import get_checkpointer
 from kor_core.agent.graph import create_graph
 
@@ -37,7 +37,7 @@ def chat():
     try:
         agent_registry = kernel.registry.get_service("agents")
         # Load agent definition
-        agent_def = agent_registry.get_agent_definition(active_agent_id)
+        agent_def = agent_registry.get_agent(active_agent_id)
         
         # We need a slightly more complex loading if it's the internal supervisor
         if active_agent_id == "default-supervisor":

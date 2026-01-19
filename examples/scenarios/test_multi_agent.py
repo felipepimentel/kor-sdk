@@ -62,7 +62,7 @@ def test_multi_agent():
         tools=["terminal", "read_file"]
     )
     
-    print(f"    ✅ Defined 3 custom agents")
+    print("    ✅ Defined 3 custom agents")
     results["passed"] += 1
     
     # 3. Configure Supervisor Team

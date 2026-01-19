@@ -1,12 +1,11 @@
 import logging
 import time
-import asyncio
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.logging import RichHandler
-from kor_core import Kernel, KorPlugin, KorContext
-from kor_core.events.hook import HookManager, HookEvent
+from kor_core import Kernel
+from kor_core.events.hook import HookManager
 from .commands.chat import chat
 from .commands.new import new
 from .commands.doctor import doctor
@@ -28,6 +27,11 @@ console = Console()
 
 # Global hook manager for CLI events
 cli_hooks = HookManager()
+
+@click.group()
+def main():
+    """KOR CLI Entry Point"""
+    pass
 
 @main.command()
 def boot():

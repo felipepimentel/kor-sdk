@@ -1,8 +1,6 @@
 
 import os
 import sys
-import time
-from typing import List
 
 # Ensure we can import kor_core if needed, though this script acts as a client
 # so it mainly depends on langchain-openai

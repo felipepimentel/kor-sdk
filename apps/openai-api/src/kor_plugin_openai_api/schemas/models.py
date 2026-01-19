@@ -4,7 +4,7 @@ Pydantic schemas for OpenAI Models API.
 These models match the official OpenAI /v1/models endpoint.
 """
 
-from typing import List, Literal, Optional
+from typing import List, Literal
 from pydantic import BaseModel
 import time
 

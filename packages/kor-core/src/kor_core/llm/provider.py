@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable, Any, Dict, Optional
+from typing import Protocol, runtime_checkable, Any, Dict
 from abc import abstractmethod
 from langchain_core.language_models.chat_models import BaseChatModel
 

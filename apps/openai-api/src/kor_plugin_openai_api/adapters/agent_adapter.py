@@ -2,9 +2,8 @@
 Bridge between OpenAI API format and KOR SDK Agent.
 """
 
-import json
 import logging
-from typing import AsyncGenerator, List, Dict, Any, Union
+from typing import AsyncGenerator, List
 from kor_core import GraphRunner
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
 

@@ -6,7 +6,7 @@ Provides support for defining agents using Markdown/YAML files instead of Python
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)

@@ -6,9 +6,7 @@ backends. Used by ToolRegistry and SkillRegistry for consistent behavior.
 """
 
 import logging
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional, TypeVar, Generic, Type, Any, Protocol
+from typing import List, Dict, Optional, TypeVar, Generic, Type, Protocol
 from .search import SearchBackend, RegexBackend, BM25Backend
 
 logger = logging.getLogger(__name__)

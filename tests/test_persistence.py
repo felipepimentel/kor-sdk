@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 import logging
 import uuid
-import shutil
 
 # Add package source to path
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))

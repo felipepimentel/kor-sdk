@@ -4,7 +4,7 @@ Shared Search Infrastructure for KOR SDK
 
 import re
 from abc import ABC, abstractmethod
-from typing import List, TypeVar, Generic, Protocol, Optional, Any
+from typing import List, TypeVar, Generic, Protocol
 
 class Searchable(Protocol):
     """Protocol for items that can be indexed and searched."""

@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 import logging
-from typing import Type
 
 # Add package source to path
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))

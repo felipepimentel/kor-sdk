@@ -28,10 +28,11 @@ The system is built around a **Singleton Kernel** that orchestrates services.
 
 1. **LLM Layer** (`kor-core/llm`):
     - **Providers**: `kor-llm-openai`, `kor-llm-litellm`.
-    - **Selector**: Routes requests based on "Purpose" (e.g., `research` -> Perplexity, `coding` -> Claude).
+    - **Selector**: Routes requests based on "Purpose" (e.g., `research` -> Perplexity).
+    - **Caching**: Unified model caching via `LLMRegistry`.
 2. **Agent Layer** (`kor-core/agent`):
-    - **Factory**: Creates LangGraph nodes from `config.toml`.
-    - **Supervisor**: Manages a team of workers dynamically.
+    - **Factory**: Creates LangGraph nodes from `config.toml` (Centralized Config).
+    - **Supervisor**: Hub-and-spoke orchestration with dynamic member lists.
 3. **Tooling Layer** (`kor-core/tools`):
     - **Registry**: Central repository of tools.
     - **Discovery**: Agents search for tools by semantic tags.
@@ -39,14 +40,14 @@ The system is built around a **Singleton Kernel** that orchestrates services.
 ## 3. Directory Map
 
 - `packages/kor-core`: The SDK core logic.
-  - `src/kor_core/kernel.py`: Main entry point.
+  - `src/kor_core/kernel.py`: Main entry point (Singleton).
   - `src/kor_core/agent/`: Graph, Factory, Persistence.
   - `src/kor_core/loader.py`: Plugin discovery.
   - `src/kor_core/config.py`: Configuration schemas.
 - `plugins/`: First-party plugins.
   - `kor-plugin-llm-*`: LLM Providers.
   - `kor-plugin-openai-api`: REST API adapter.
-- `tests/`: Integration verification scripts (`verify_*.py`).
+- `tests/`: Integration verification (pytest).
 
 ## 4. Common Workflows
 
@@ -71,12 +72,11 @@ supervisor_members = ["Coder", "MyAgent"]
 
 ### W3: Running Verification
 
-Always run verification scripts after changes:
+Always run the full test suite after changes:
 
-- `uv run python tests/verify_llm_architecture.py`
-- `uv run python tests/verify_agent_factory.py`
-- `uv run python tests/verify_tool_registry.py`
-- `uv run python tests/verify_persistence.py`
+```bash
+uv run pytest tests/
+```
 
 ## 5. Code Standards
 
@@ -87,13 +87,12 @@ Always run verification scripts after changes:
 
 ## 6. Current State (Jan 2026)
 
-- **LLM**: Universal (LiteLLM integrated).
-- **Agents**: Configurable via Factory.
-- **Persistence**: SQLite implemented.
-- **Tools**: Registry supports dynamic plugin registration.
+- **Status**: Stable / Production Ready.
+- **Audit**: Deep code cleanup completed (legacy files removed).
+- **Architecture**: Lazy loading implemented for all plugins.
 - **Deep Coding**:
-  - `kor-plugin-smart-edit`: Use `smart_edit` tool for safe, verified file modifications.
-  - `kor-plugin-code-graph`: Use `search_symbols` tool to find code definitions (classes/functions) semantically.
+  - `kor-plugin-smart-edit`: Verified file modifications.
+  - `kor-plugin-code-graph`: Semantic code search.
 
 ## 7. Recommended Agent Protocol
 

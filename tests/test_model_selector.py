@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
 from kor_core.llm.selector import ModelSelector
-from kor_core.llm.registry import LLMRegistry
 from kor_core.llm.exceptions import ConfigurationError
 
 

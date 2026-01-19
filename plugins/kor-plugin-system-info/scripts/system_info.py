@@ -9,7 +9,6 @@ Can be called directly or via hook command.
 import json
 import platform
 import sys
-import os
 
 
 def get_system_info() -> dict:

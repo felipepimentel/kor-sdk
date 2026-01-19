@@ -7,9 +7,7 @@ from ..schemas.models import ModelsResponse, KOR_MODELS
 
 router = APIRouter()
 
-from kor_core import Kernel
-from ..schemas.models import ModelsResponse, Model
-import time
+from ..schemas.models import Model
 
 @router.get("/v1/models", response_model=ModelsResponse)
 @router.get("/models", response_model=ModelsResponse)
@@ -35,7 +33,6 @@ async def list_models():
         ))
     
     # Add static defaults
-    from ..schemas.models import KOR_MODELS
     for m in KOR_MODELS:
         if m.id not in [d.id for d in data]:
             data.append(m)

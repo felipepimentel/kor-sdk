@@ -1,13 +1,14 @@
 # KOR — The Developer Operating System
 
 > An extensible AI agent framework with a modular plugin architecture, inspired by Claude Code.
+> **Status: Production Ready (v1.0)** 🚀
 
 ## ✨ Features
 
 - **LangGraph Agent**: Supervisor-Worker pattern for task orchestration.
-- **Built-in Tools**: Terminal execution, Web search (DuckDuckGo).
-- **Plugin System**: Manifest-based (`plugin.json`), with support for `commands/`, `agents/`, `skills/`.
-- **Hooks**: Event-driven architecture (`on_boot`, `pre_command`).
+- **Optimized Kernel**: Asynchronous, lazy-loading singleton architecture.
+- **Plugin System**: Manifest-based (`plugin.json`) with robust isolation.
+- **Hooks**: Event-driven architecture (`on_boot`, `pre_command`) with telemetry.
 - **MCP Support**: Model Context Protocol client for external tool integration.
 - **Rich CLI**: Beautiful output with spinners, panels, and colors.
 
@@ -19,7 +20,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/youruser/kor-sdk.git
+git clone https://github.com/felipepimentel/kor-sdk.git
 cd kor-sdk
 
 # Install with uv
@@ -69,7 +70,7 @@ uv run kor new my-awesome-plugin
 
 This generates:
 
-```
+```text
 my-awesome-plugin/
 ├── agents/
 ├── commands/

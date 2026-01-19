@@ -3,7 +3,6 @@ import click
 from pathlib import Path
 from rich.console import Console
 from rich.tree import Tree
-from rich.table import Table
 from datetime import datetime
 
 console = Console()
@@ -66,9 +65,9 @@ def trace(last, show_all):
             elif ev_name == "on_node_start":
                 run_tree.add(f"[yellow]⚙ Entering Node[/yellow]: [bold]{data.get('node', 'unknown')}[/bold]")
             elif ev_name == "on_agent_end":
-                run_tree.add(f"[blue]⏹ Agent Finished[/blue]")
+                run_tree.add("[blue]⏹ Agent Finished[/blue]")
             elif ev_name == "on_boot":
-                run_tree.add(f"[dim]⟳ System Boot[/dim]")
+                run_tree.add("[dim]⟳ System Boot[/dim]")
             else:
                 if show_all:
                     run_tree.add(f"[dim]{ev_name}[/dim]")

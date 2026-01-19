@@ -5,7 +5,6 @@ Exposes KOR capabilities as an MCP server, allowing external agents to use KOR t
 """
 
 import asyncio
-import json
 from typing import Any
 from mcp.server import Server
 from mcp.types import Tool, TextContent

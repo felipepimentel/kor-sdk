@@ -8,7 +8,6 @@ Tracks token usage for LLM calls. Stores data in SQLite.
 import json
 import sqlite3
 import sys
-import os
 from datetime import datetime
 from pathlib import Path
 

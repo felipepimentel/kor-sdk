@@ -1,15 +1,13 @@
 import sys
-import os
 from pathlib import Path
 
 # Add package source to path
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
 sys.path.insert(0, str(Path.cwd() / "plugins/kor-plugin-llm-openai/src"))
 
-from kor_core.kernel import Kernel, get_kernel
-from kor_core.config import LLMConfig, ProviderConfig, ModelRef
+from kor_core.kernel import get_kernel
+from kor_core.config import ProviderConfig, ModelRef
 # Provider moved to core
-from kor_core.llm.providers.openai import OpenAIProvider
 import logging
 
 # Configure logging

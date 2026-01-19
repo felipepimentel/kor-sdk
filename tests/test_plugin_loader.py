@@ -1,7 +1,5 @@
-import os
 import json
 import tempfile
-import pytest
 from pathlib import Path
 from kor_core.loader import PluginLoader
 from kor_core.plugin.manifest import PluginManifest

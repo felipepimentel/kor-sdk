@@ -1,14 +1,16 @@
 import importlib
 import importlib.metadata
-import pkgutil
 import sys
-import os
 import json
 from pathlib import Path
-from typing import List, Type, Dict, Set, Optional
+from typing import List, Type, Dict
 import logging
 from .plugin import KorPlugin, KorContext
 from .plugin.manifest import PluginManifest, AgentDefinition
+from .config import KorConfig, MCPServerConfig, LSPServerConfig
+
+if TYPE_CHECKING:
+    from .commands import Command
 
 logger = logging.getLogger(__name__)
 

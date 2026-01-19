@@ -1,4 +1,4 @@
-from typing import Optional, Type, List
+from typing import Type
 from pydantic import BaseModel, Field
 from .base import KorTool
 import asyncio
@@ -27,7 +27,7 @@ class LSPHoverTool(KorTool):
                 # But BaseTool default run calls _run. 
                 # If we are called from async agent, it calls _arun.
                 return "Use _arun for LSP operations."
-        except:
+        except Exception:
             pass
         return asyncio.run(self._arun(file_path, line, character))
 
@@ -108,7 +108,8 @@ class LSPDefinitionTool(KorTool):
         kernel = get_kernel()
         manager = kernel.registry.get_service("lsp")
         
-        if not manager: return "LSP Service unavailable."
+        if not manager:
+            return "LSP Service unavailable."
 
         client = None
         target_lang = "text"
@@ -119,7 +120,8 @@ class LSPDefinitionTool(KorTool):
                 target_lang = lang
                 break
         
-        if not client: return f"No LSP client for {file_path}"
+        if not client:
+            return f"No LSP client for {file_path}"
 
         uri = f"file://{file_path}"
         try:
@@ -148,8 +150,8 @@ class LSPDefinitionTool(KorTool):
             for loc in locs:
                 if "uri" in loc and "range" in loc:
                     f = loc["uri"].replace("file://", "")
-                    l = loc["range"]["start"]["line"] + 1
-                    result.append(f"{f}:{l}")
+                    line_num = loc["range"]["start"]["line"] + 1
+                    result.append(f"{f}:{line_num}")
             
             return "\n".join(result)
             

@@ -4,13 +4,10 @@ Skills System for KOR
 Skills are reusable knowledge/procedures that agents can discover and apply.
 """
 
-import re
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Type
+from typing import List, Optional
 from pathlib import Path
 import logging
-from ..search import SearchBackend as SkillSearchBackend, RegexBackend as RegexSkillBackend, BM25Backend as BM25SkillBackend
 from ..searchable_registry import SearchableRegistry
 
 logger = logging.getLogger(__name__)

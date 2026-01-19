@@ -1,6 +1,9 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 import logging
 from .validator import CommandValidator, BaseValidator
+
+if TYPE_CHECKING:
+    from ..config import LanguageConfig
 
 logger = logging.getLogger(__name__)
 

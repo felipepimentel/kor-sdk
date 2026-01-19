@@ -3,7 +3,6 @@ Tests for the KOR exception hierarchy.
 
 Validates that all custom exceptions work correctly and have proper messages.
 """
-import pytest
 from kor_core.exceptions import (
     KorError,
     ConfigurationError,
@@ -17,7 +16,6 @@ from kor_core.exceptions import (
     ToolNotFoundError,
     AgentError,
     AgentNotFoundError,
-    AgentExecutionError,
     LLMError,
     ProviderNotFoundError,
     ModelNotConfiguredError,

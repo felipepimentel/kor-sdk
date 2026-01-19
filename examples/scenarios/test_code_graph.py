@@ -153,7 +153,7 @@ class Order:
         all_symbols = db.search_symbols("")  # Empty query gets all
         # Note: might not work with empty query
         
-        print(f"    ✅ Code graph operational")
+        print("    ✅ Code graph operational")
         results["passed"] += 1
         
     finally:

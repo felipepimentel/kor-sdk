@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Input, RichLog, Static, LoadingIndicator
-from textual.containers import Container, Vertical, Horizontal
+from textual.containers import Container, Vertical
 from textual.binding import Binding
 import asyncio
 

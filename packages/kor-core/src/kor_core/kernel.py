@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any, Callable
 import logging
 import asyncio
 import os
+from contextvars import ContextVar  # Moved to top
 from .plugin import ServiceRegistry, KorContext
 from .loader import PluginLoader
 from .config import ConfigManager
@@ -303,8 +304,6 @@ class Kernel:
 
 
 # Singleton management using contextvars for async-safe isolation
-from contextvars import ContextVar
-
 _kernel_context: ContextVar[Optional["Kernel"]] = ContextVar("kor_kernel", default=None)
 
 

@@ -21,7 +21,6 @@ def test_llm_system():
     
     from kor_core.kernel import Kernel
     from kor_core.config import ModelRef, ProviderConfig
-    from kor_core.llm import LLMRegistry, ModelSelector
     
     # 1. Initialize Kernel
     print("\n[1] Initializing Kernel...")

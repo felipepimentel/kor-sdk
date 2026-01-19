@@ -1,7 +1,5 @@
-import pytest
 import sys
 from unittest.mock import MagicMock, patch
-from kor_core.tools.registry import ToolRegistry
 
 # We need to simulate the plugin loading process or just manually call the registration
 # Since we are testing if the plugin *code* works, we can just import it.

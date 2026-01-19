@@ -2,9 +2,7 @@
 Loading prompts from files.
 """
 
-from pathlib import Path
 from importlib.resources import files
-import os
 
 from ..config import ConfigManager
 

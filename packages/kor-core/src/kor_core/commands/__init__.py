@@ -38,7 +38,7 @@ class Command:
         return f"{self.name} {self.description} {' '.join(self.tags)}"
 
 
-from .loader import CommandLoader
-from .registry import CommandRegistry
+from .loader import CommandLoader  # noqa: E402
+from .registry import CommandRegistry  # noqa: E402
 
 __all__ = ["Command", "CommandLoader", "CommandRegistry"]

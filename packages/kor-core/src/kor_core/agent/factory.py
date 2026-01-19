@@ -1,6 +1,5 @@
 from typing import Callable, Any, Dict, Optional, TYPE_CHECKING
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage
 import logging
 from .state import AgentState
 

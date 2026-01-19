@@ -1,14 +1,12 @@
 """
 Comprehensive verification of Persistence, Search, and Telemetry.
 """
-import os
-import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from kor_core.agent.persistence import get_checkpointer
 from kor_core.agent.graph import create_graph
 from kor_core import GraphRunner
-from kor_core.kernel import Kernel, get_kernel
+from kor_core.kernel import get_kernel
 
 def test_professional_flow():
     print("=== Professional Infrastructure Verification ===")

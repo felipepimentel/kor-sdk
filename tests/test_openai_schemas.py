@@ -5,10 +5,8 @@ Tests for OpenAI API Plugin Pydantic Schemas.
 from kor_plugin_openai_api.schemas.chat import (
     ChatCompletionRequest,
     ChatCompletionResponse,
-    ChatCompletionChunk,
     Message
 )
-import json
 
 def test_chat_completion_request_serialization():
     """Test that a request serialization works."""

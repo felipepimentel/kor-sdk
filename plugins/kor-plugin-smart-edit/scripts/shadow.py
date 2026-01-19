@@ -1,8 +1,7 @@
 import shutil
-import os
 import tempfile
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)

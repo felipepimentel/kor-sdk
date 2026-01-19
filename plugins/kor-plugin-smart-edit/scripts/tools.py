@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Type
 from kor_core.tools import KorTool
 from .shadow import ShadowWorkspace
 from .linter import LinterService

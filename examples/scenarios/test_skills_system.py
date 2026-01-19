@@ -4,7 +4,6 @@ KOR SDK - Scenario: Skills System Verification
 Validates the skills registry, search, and loading capabilities.
 """
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
@@ -77,10 +76,10 @@ def test_skills_system():
     registry.register(skill3)
     
     if len(registry.get_all()) == 3:
-        print(f"    ✅ Registered 3 skills")
+        print("    ✅ Registered 3 skills")
         results["passed"] += 1
     else:
-        print(f"    ❌ Expected 3 skills")
+        print("    ❌ Expected 3 skills")
         results["failed"] += 1
     
     # 3. Search Skills
@@ -88,7 +87,7 @@ def test_skills_system():
     results_found = registry.search("testing python unit")
     
     if results_found and any("pytest" in s.name for s in results_found):
-        print(f"    ✅ Found pytest skill via search")
+        print("    ✅ Found pytest skill via search")
         results["passed"] += 1
     else:
         print(f"    ⚠️ Search results: {[s.name for s in results_found]}")
@@ -99,7 +98,7 @@ def test_skills_system():
     docker_results = registry.search("container docker devops")
     
     if docker_results and any("docker" in s.name for s in docker_results):
-        print(f"    ✅ Found docker skill")
+        print("    ✅ Found docker skill")
         results["passed"] += 1
     else:
         print(f"    ⚠️ Docker search: {[s.name for s in docker_results]}")
@@ -110,7 +109,7 @@ def test_skills_system():
     skill = registry.get("api-design")
     
     if skill and skill.name == "api-design":
-        print(f"    ✅ Retrieved skill by name")
+        print("    ✅ Retrieved skill by name")
         results["passed"] += 1
     else:
         print("    ❌ Failed to get skill by name")
@@ -133,7 +132,7 @@ def test_skills_system():
         print("    ✅ Results formatted correctly")
         results["passed"] += 1
     else:
-        print(f"    ❌ Formatting failed")
+        print("    ❌ Formatting failed")
         results["failed"] += 1
     
     # 8. Searchable Text

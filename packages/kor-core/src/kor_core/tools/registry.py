@@ -4,7 +4,7 @@ Tool Registry with Pluggable Search Backends
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Type
-from ..searchable_registry import SearchableRegistry, T
+from ..searchable_registry import SearchableRegistry
 from .base import KorTool
 
 @dataclass

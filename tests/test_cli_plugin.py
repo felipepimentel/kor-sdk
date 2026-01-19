@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from click.testing import CliRunner
 from kor_cli.commands.plugin import list as list_cmd
 from kor_cli.commands.plugin import install as install_cmd

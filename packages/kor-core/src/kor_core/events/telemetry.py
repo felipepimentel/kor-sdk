@@ -5,7 +5,7 @@ import json
 import time
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 from .hook import HookManager, HookEvent
 
 logger = logging.getLogger(__name__)

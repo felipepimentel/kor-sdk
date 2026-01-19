@@ -5,7 +5,10 @@ Loads slash commands from markdown files with YAML frontmatter.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .registry import CommandRegistry
+    from . import Command
 import logging
 
 logger = logging.getLogger(__name__)
@@ -88,7 +91,6 @@ class CommandLoader:
         Returns:
             List of loaded Command objects
         """
-        from . import Command
         loaded = []
         
         if not directory.exists():

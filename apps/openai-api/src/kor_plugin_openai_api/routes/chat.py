@@ -2,11 +2,10 @@
 Chat completion routes.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
-import json
 
-from ..schemas.chat import ChatCompletionRequest, ChatCompletionResponse
+from ..schemas.chat import ChatCompletionRequest
 from ..adapters.agent_adapter import OpenAIToKORAdapter
 
 router = APIRouter()

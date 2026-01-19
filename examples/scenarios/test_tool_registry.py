@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
 
-from kor_core.tools.registry import ToolRegistry, ToolInfo
+from kor_core.tools.registry import ToolRegistry
 from kor_core.tools.terminal import TerminalTool
 from kor_core.tools.browser import BrowserTool
 
@@ -44,7 +44,7 @@ def test_tool_registry():
     search_results = registry.search("run command shell")
     
     if search_results and any("terminal" in r.name.lower() for r in search_results):
-        print(f"    ✅ Found terminal tool via search")
+        print("    ✅ Found terminal tool via search")
         results["passed"] += 1
     else:
         print(f"    ⚠️ Search results: {[r.name for r in search_results]}")
