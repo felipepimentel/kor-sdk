@@ -4,9 +4,9 @@ import asyncio
 import os
 from contextvars import ContextVar  # Moved to top
 from .plugin import ServiceRegistry, KorContext
-from .loader import PluginLoader
+from .plugin import PluginLoader
 from .config import ConfigManager
-from .events.hook import HookManager, HookEvent
+from .events import HookManager, HookEvent
 from .agent.registry import AgentRegistry
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Kernel:
         self.registry.register_service("lsp", self.lsp_manager)
         
         self.hooks = HookManager()
-        from .events.telemetry import setup_telemetry
+        from .events import setup_telemetry
         setup_telemetry(self.hooks)
         
         # 4. Register Core Tools
@@ -169,24 +169,21 @@ class Kernel:
         self.loader.load_directory_plugins(plugins_dir)
 
     def _register_builtin_providers(self):
-        """Register built-in LLM providers (OpenAI, LiteLLM)."""
+        """Register built-in LLM providers."""
         try:
-            from .llm.providers import OpenAIProvider
-            self.llm_registry.register(OpenAIProvider())
-            logger.debug("Registered built-in OpenAI provider")
-        except ImportError:
-            logger.debug("OpenAI provider not available (missing langchain-openai)")
-        except Exception as e:
-            logger.warning(f"Failed to register OpenAI provider: {e}")
+            from .llm import UnifiedProvider
+            # Register generic 'unified' provider
+            self.llm_registry.register(UnifiedProvider(name="unified"))
             
-        try:
-            from .llm.providers import LiteLLMProvider
-            self.llm_registry.register(LiteLLMProvider())
-            logger.debug("Registered built-in LiteLLM provider")
-        except ImportError:
-            logger.debug("LiteLLM provider not available (missing langchain-community)")
+            # Register 'openai' alias for backward compatibility
+            self.llm_registry.register(UnifiedProvider(name="openai"))
+            
+            # Register 'litellm' alias for backward compatibility
+            self.llm_registry.register(UnifiedProvider(name="litellm"))
+            
+            logger.debug("Registered built-in LLM providers (unified, openai, litellm)")
         except Exception as e:
-            logger.warning(f"Failed to register LiteLLM provider: {e}")
+            logger.warning(f"Failed to register built-in providers: {e}")
 
     def _initialize_internal(self):
         """Internal helper for common initialization steps (Async/Sync agnostic)."""
@@ -196,7 +193,7 @@ class Kernel:
         logger.info(f"Initializing KOR Kernel (User: {self.config.user.name or 'Guest'})...")
         
         # Register default internal agent
-        from .plugin.manifest import AgentDefinition
+        from .agent.models import AgentDefinition
         self.agent_registry.register(AgentDefinition(
             id="default-supervisor",
             name="Default Supervisor",

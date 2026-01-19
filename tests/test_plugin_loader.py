@@ -1,8 +1,8 @@
 import json
 import tempfile
 from pathlib import Path
-from kor_core.loader import PluginLoader
-from kor_core.plugin.manifest import PluginManifest
+from kor_core.plugin import PluginLoader
+from kor_core.plugin import PluginManifest
 from kor_core.plugin import KorPlugin, KorContext, ServiceRegistry
 
 class MockPlugin(KorPlugin):

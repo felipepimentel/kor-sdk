@@ -77,7 +77,7 @@ def test_kernel_hook_manager():
     async def on_shutdown():
         called.append("shutdown")
     
-    from kor_core.events.hook import HookEvent
+    from kor_core.events import HookEvent
     kernel.hooks.register(HookEvent.ON_SHUTDOWN, on_shutdown)
     
     asyncio.run(kernel.shutdown())

@@ -1,7 +1,7 @@
 import logging
 import json
 from typing import Dict, Any
-from .events.hook import TelemetrySink, HookEvent
+from .events import TelemetrySink, HookEvent
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ def serve(mode, host, port):
         console.print("\n[dim]Press Ctrl+C to stop.[/dim]\n")
         
         try:
-            from kor_core.server import run_server
+            from kor_core.mcp import run_server
             run_server()
         except KeyboardInterrupt:
             console.print("\n[bold yellow]Server stopped.[/]")

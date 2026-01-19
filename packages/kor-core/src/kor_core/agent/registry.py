@@ -3,7 +3,7 @@ Registry for discovered agents.
 """
 
 from typing import Dict, Optional, Any
-from ..plugin.manifest import AgentDefinition
+from .models import AgentDefinition
 import importlib
 import logging
 
@@ -25,6 +25,9 @@ class AgentRegistry:
 
     def list_agents(self) -> Dict[str, AgentDefinition]:
         return self._agents
+        
+    def get_all(self) -> list[AgentDefinition]:
+        return list(self._agents.values())
 
     def get_agent(self, agent_id: str) -> Optional[AgentDefinition]:
         return self._agents.get(agent_id)

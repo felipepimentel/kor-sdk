@@ -11,7 +11,7 @@ import logging
 
 if TYPE_CHECKING:
     from .registry import AgentRegistry
-    from ..plugin.manifest import AgentDefinition
+    from .models import AgentDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class DeclarativeAgentDefinition:
         
         Uses a special 'declarative:' prefix to indicate runtime graph building.
         """
-        from ..plugin.manifest import AgentDefinition
+        from .models import AgentDefinition
         return AgentDefinition(
             id=self.id,
             name=self.name,

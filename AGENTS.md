@@ -13,43 +13,62 @@
 
 ## 2. Architecture
 
-The system is built around a **Singleton Kernel** that orchestrates services.
+The system is built around a **Pythonic Facade** (`Kor`) and a **Singleton Kernel** that orchestrates services.
 
 ### Core Components
 
-1. **Kernel** (`kor_core.kernel`): The central object. Bootstraps the system, loads plugins, and exposes the Service Registry.
-2. **Service Registry**: A dependency injection container. Holds `agents`, `tools`, `llm`, `checkpointer`.
-3. **Plugin System**:
-    - **Manifest**: `plugin.json` defines metadata and entry points.
-    - **Loader**: Discovers and initializes plugins.
-    - **Interface**: `KorPlugin` (abstract base).
+1. **Facade** (`kor_core.api.Kor`): The primary entry point for developers. Provides a fluent API for booting, configuring, and running agents.
+2. **Kernel** (`kor_core.kernel`): The central orchestrator. Bootstraps the system, loads plugins, and exposes the Service Registry.
+3. **Service Registry**: A dependency injection container. Holds `agents`, `tools`, `llm`, `skills`.
+4. **Vertical Modules**: Core subsystems are organized vertically:
+    - `kor_core.mcp`: Model Context Protocol (Client & Server)
+    - `kor_core.lsp`: Language Server Protocol (Validation & Intelligence)
+    - `kor_core.skills`: Skills Registry & Discovery
+    - `kor_core.llm`: LLM Providers & Selection
 
 ### The Three Layers of Extensibility
 
 1. **LLM Layer** (`kor-core/llm`):
-    - **Providers**: `kor-llm-openai`, `kor-llm-litellm`.
+    - **Unified Provider**: Single usage pattern for OpenAI, Anthropic, Local (Ollama/LM Studio).
     - **Selector**: Routes requests based on "Purpose" (e.g., `research` -> Perplexity).
-    - **Caching**: Unified model caching via `LLMRegistry`.
 2. **Agent Layer** (`kor-core/agent`):
-    - **Factory**: Creates LangGraph nodes from `config.toml` (Centralized Config).
-    - **Supervisor**: Hub-and-spoke orchestration with dynamic member lists.
+    - **Unified Definition**: Single `AgentDefinition` for both declarative and code-based agents.
+    - **State Graph**: Based on LangGraph.
 3. **Tooling Layer** (`kor-core/tools`):
     - **Registry**: Central repository of tools.
     - **Discovery**: Agents search for tools by semantic tags.
 
 ## 3. Directory Map
 
-- `packages/kor-core`: The SDK core logic.
-  - `src/kor_core/kernel.py`: Main entry point (Singleton).
-  - `src/kor_core/agent/`: Graph, Factory, Persistence.
-  - `src/kor_core/loader.py`: Plugin discovery.
-  - `src/kor_core/config.py`: Configuration schemas.
-- `plugins/`: First-party plugins.
-  - `kor-plugin-llm-*`: LLM Providers.
-  - `kor-plugin-openai-api`: REST API adapter.
-- `tests/`: Integration verification (pytest).
+The codebase follows a **Vertical Architecture** with consolidated modules:
 
-## 4. Common Workflows
+- `packages/kor-core/src/kor_core/`:
+  - `api.py`: **Main Entry Point** (Kor Facade).
+  - `kernel.py`: Core orchestrator.
+  - `plugin.py`: Plugin System (Loader, Manifest, Context).
+  - `skills.py`: Skill System (Registry, Loader).
+  - `prompts.py`: Prompt Loading logic.
+  - `events.py`: Unified Event Bus.
+  - `search.py`: Unified Search Backend.
+  - `commands.py`: Unified Command System.
+  - `config.py`: Configuration & Environment.
+  - `utils.py`: Shared utilities.
+  - `mcp/`: Model Context Protocol.
+  - `lsp/`: Language Server Protocol.
+  - `tools/`: Tool Implementations.
+  - `llm/`: LLM Subsystem.
+  - `agent/`: Agent Subsystem.
+  - `resources/` (Repo Root): Non-code assets.
+
+## 4. Architectural Principles
+
+1. **Vertical Architecture**: Each domain is self-contained.
+2. **Consolidated Code**: Related classes are in single files (`plugin.py`, `skills.py`, `events.py`) to reduce file hopping.
+3. **Unified Abstractions**: Single `AgentDefinition`, single `BaseLoader`.
+4. **Facade First**: Public API accessed via `Kor()` facade.
+5. **Clean Root**: Resource files moved to repository root `resources/`.
+
+## 5. Common Workflows
 
 ### W1: Adding a New Capability (Plugin)
 
@@ -78,23 +97,8 @@ Always run the full test suite after changes:
 uv run pytest tests/
 ```
 
-## 5. Code Standards
-
-- **Type Hinting**: Mandatory for all public APIs.
-- **Error Handling**: Use distinct exceptions (`ConfigurationError`, `PluginError`).
-- **Imports**: Absolute imports within `kor_core`.
-- **Config**: Do not hardcode values. Use `config.py` schemas.
-
-## 6. Current State (Jan 2026)
-
-- **Status**: Stable / Production Ready.
-- **Audit**: Deep code cleanup completed (legacy files removed).
-- **Architecture**: Lazy loading implemented for all plugins.
-- **Deep Coding**:
-  - `kor-plugin-smart-edit`: Verified file modifications.
-  - `kor-plugin-code-graph`: Semantic code search.
-
-## 7. Recommended Agent Protocol
+## 6. Recommended Agent Protocol
 
 1. **Search First**: When asked about "Auth", do NOT `cat auth.py`. Use `search_symbols("Auth")` to find the exact file and class.
 2. **Edit Safely**: Do NOT use `write_to_file` for partial code logic. Use `smart_edit` which guarantees syntax correctness.
+3. **Check Task**: Always verify `task.md` for current progress.

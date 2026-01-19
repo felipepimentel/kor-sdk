@@ -13,10 +13,10 @@ console = Console()
 def chat():
     """Starts the interactive KOR agent session."""
     
-    # Boot Kernel to load plugins/agents
-    from kor_core.kernel import get_kernel
-    kernel = get_kernel()
-    kernel.boot_sync()
+    # 1. Boot Kor Facade
+    from kor_core import Kor
+    kor = Kor()
+    kor.boot()
 
     # 2. Setup Permission Handler (HITL)
     def ask_permission(action: str, details: Any) -> bool:
@@ -25,28 +25,29 @@ def chat():
             return click.confirm("Allow execution?", default=False)
         return True
 
-    kernel.permission_callback = ask_permission
+    # Access kernel via facade for advanced configuration
+    kor.kernel.permission_callback = ask_permission
     
-    # 3. Setup Persistence
-    checkpointer = get_checkpointer(kernel.config.persistence)
-    
-    # Resolve active agent
-    active_agent_id = kernel.config.agent.active_graph
+    # 3. Setup Persistence & Graph
+    active_agent_id = kor.config.agent.active_graph
     console.print(Panel(f"Starting KOR Agent: [bold]{active_agent_id}[/bold] (Persistent)", style="bold purple"))
     
     try:
-        agent_registry = kernel.registry.get_service("agents")
-        # Load agent definition
-        agent_def = agent_registry.get_agent(active_agent_id)  # noqa: F841
+        # Check if we need to manually load a graph or if it's default
+        graph = None
         
-        # We need a slightly more complex loading if it's the internal supervisor
+        # We need checkpointer for persistence
+        from kor_core.agent.persistence import get_checkpointer
+        checkpointer = get_checkpointer(kor.config.persistence)
+        
         if active_agent_id == "default-supervisor":
+             from kor_core.agent.graph import create_graph
              graph = create_graph(checkpointer=checkpointer)
         else:
-             graph = agent_registry.load_graph(active_agent_id)
-             # NOTE: External graphs might need to support checkpointer as well in their factory
+             graph = kor.agents.load_graph(active_agent_id)
+             # NOTE: External graphs might need to support checkpointer as well
              
-        runner = GraphRunner(graph=graph)
+        # We pass the graph to kor.run via force_graph
     except Exception as e:
         console.print(f"[bold red]Failed to load agent {active_agent_id}: {e}[/]")
         return
@@ -60,8 +61,9 @@ def chat():
                     
                 console.print("[dim]Thinking...[/dim]")
                 
-                # Streaming events from the graph
-                for event in runner.run(user_input, thread_id="main-session"):
+                # Streaming events from the graph via Facade
+                # Note: kor.run returns the generator from GraphRunner
+                for event in kor.run(user_input, thread_id="main-session", force_graph=graph):
                     for node, details in event.items():
                         # Format output based on node type
                         if node == "Supervisor":
@@ -82,5 +84,4 @@ def chat():
 
         console.print("[bold purple]Goodbye![/]")
     finally:
-        import asyncio
-        asyncio.run(kernel.shutdown())
+        kor.shutdown()

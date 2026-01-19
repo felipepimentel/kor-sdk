@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd() / "packages/kor-core/src"))
 
-from kor_core.skills.registry import SkillRegistry, Skill
+from kor_core.skills import SkillRegistry, Skill
 
 def test_skills_system():
     """Test skills system functionality."""

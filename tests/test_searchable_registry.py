@@ -1,7 +1,7 @@
 import pytest
 from dataclasses import dataclass
 from unittest.mock import patch, MagicMock
-from kor_core.searchable_registry import SearchableRegistry
+from kor_core.search import SearchableRegistry
 
 @dataclass
 class SimpleItem:

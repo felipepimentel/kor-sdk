@@ -1,10 +1,9 @@
 """
-Loading prompts from files.
+Prompts package.
 """
 
 from importlib.resources import files
-
-from ..config import ConfigManager
+from .config import ConfigManager
 
 class PromptLoader:
     """Methods to load prompts from the package or user override."""
@@ -33,7 +32,7 @@ class PromptLoader:
         Loads a prompt by name (filename without extension).
         Priority:
         1. ~/.kor/prompts/{name}.md (if not skipped)
-        2. kor_core/prompts/{name}.md
+        2. kor_core/resources/prompts/{name}.md
         """
         filename = f"{name}.md"
         
@@ -46,13 +45,20 @@ class PromptLoader:
             if user_file.exists():
                 return user_file.read_text(encoding="utf-8")
             
-        # 2. Check package resources
+        # 2. Check repository resources (Dev Mode)
+        # Assuming layout: repo_root/resources/prompts/
+        # kor_core/prompts.py is 5 levels deep in src layout
         try:
-            prompt_path = files("kor_core.prompts").joinpath(filename)
-            if prompt_path.exists(): 
-                 return prompt_path.read_text(encoding="utf-8")
+             repo_root = Path(__file__).parents[5] 
+             resource_file = repo_root / "resources" / "prompts" / filename
+             if resource_file.exists():
+                 return resource_file.read_text(encoding="utf-8")
         except Exception:
-            pass
+             pass
+
+        # 3. Fallback: Check standard package location (for installed wheels)
+        # This requires RESOURCES to be included in package data, which user currently moved out.
+        # We keep this as a placeholder or check a known install location.
+        # For now, if we are installed, we might expect ~/.kor/prompts to be populated by `export_defaults`.
             
         return ""
-

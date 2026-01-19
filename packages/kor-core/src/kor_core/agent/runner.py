@@ -11,7 +11,7 @@ class GraphRunner:
         Runs the graph with the user input and yields events.
         """
         from ..kernel import get_kernel
-        from ..events.hook import HookEvent
+        from ..events import HookEvent
         kernel = get_kernel()
         
         # Emit Agent Start

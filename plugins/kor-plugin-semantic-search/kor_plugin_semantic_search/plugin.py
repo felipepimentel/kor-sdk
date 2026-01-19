@@ -1,7 +1,7 @@
 import logging
 from kor_core import KorPlugin, KorContext
 from kor_core.tools.registry import ToolRegistry
-from kor_core.skills.registry import SkillRegistry
+from kor_core.skills import SkillRegistry
 from .backend import ChromaDBBackend
 
 logger = logging.getLogger(__name__)

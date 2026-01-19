@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.logging import RichHandler
 from kor_core import Kernel
-from kor_core.events.hook import HookManager
+from kor_core.events import HookManager
 from .commands.chat import chat
 from .commands.new import new
 from .commands.doctor import doctor
@@ -39,11 +39,12 @@ def boot():
     console.print(Panel.fit("[bold blue]KOR[/] - The Developer Operating System", border_style="blue"))
     
     with console.status("[bold green]Booting Kernel...[/]", spinner="dots"):
-        kernel = Kernel()
-        kernel.boot_sync()
+        from kor_core import Kor
+        kor = Kor()
+        kor.boot()
         time.sleep(0.5)
     
-    console.print(f"[bold]Session User:[/bold] {kernel.config.user.name or 'Guest'}")
+    console.print(f"[bold]Session User:[/bold] {kor.config.user.name or 'Guest'}")
     console.print("[bold green]✔ System Ready.[/]")
 
 # Add subcommands

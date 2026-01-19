@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from kor_core.kernel import Kernel
-from kor_core.events.hook import HookEvent
+from kor_core.events import HookEvent
 
 @pytest.mark.asyncio
 async def test_kernel_context_manager():

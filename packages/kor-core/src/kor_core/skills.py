@@ -1,45 +1,53 @@
 """
-Skill Loader
+Skills System for KOR SDK
 
-Loads skills from filesystem directories (markdown files with YAML frontmatter).
+Skills are reusable knowledge/procedures that agents can discover and apply.
 """
 
-from pathlib import Path
+from dataclasses import dataclass, field
 from typing import List, Optional
+from pathlib import Path
 import logging
-from .registry import Skill, SkillRegistry
+from .search import SearchableRegistry
+from .utils import parse_frontmatter
 
 logger = logging.getLogger(__name__)
 
-def parse_frontmatter(content: str) -> tuple[dict, str]:
+@dataclass
+class Skill:
     """
-    Parse YAML frontmatter from markdown content.
+    A skill represents reusable knowledge or procedures.
     
-    Returns (frontmatter_dict, remaining_content)
+    Skills are typically loaded from markdown files with YAML frontmatter.
     """
-    frontmatter = {}
-    body = content
+    name: str
+    description: str
+    content: str  # The actual skill content (instructions, knowledge)
+    tags: List[str] = field(default_factory=list)
+    source_path: Optional[Path] = None
     
-    # Check for frontmatter delimiter
-    if content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            import yaml
-            try:
-                frontmatter = yaml.safe_load(parts[1]) or {}
-            except Exception:
-                # If pyyaml not installed, try simple parsing
-                for line in parts[1].strip().split("\n"):
-                    if ":" in line:
-                        key, value = line.split(":", 1)
-                        value = value.strip()
-                        # Handle list syntax [item1, item2]
-                        if value.startswith("[") and value.endswith("]"):
-                            value = [v.strip().strip('"\'') for v in value[1:-1].split(",")]
-                        frontmatter[key.strip()] = value
-            body = parts[2].strip()
+    @property
+    def searchable_text(self) -> str:
+        """Combined text for search indexing."""
+        return f"{self.name} {self.description} {' '.join(self.tags)} {self.content[:500]}"
+
+class SkillRegistry(SearchableRegistry[Skill]):
+    """
+    Central registry for skills using the unified SearchableRegistry base.
+    """
     
-    return frontmatter, body
+    def format_results(self, results: List[Skill], include_content: bool = False) -> str:
+        """Format search results for the agent."""
+        if not results:
+            return "No matching skills found."
+        
+        lines = ["Available skills:"]
+        for skill in results:
+            lines.append(f"- **{skill.name}**: {skill.description}")
+            if include_content:
+                lines.append(f"  Content: {skill.content[:200]}...")
+        return "\n".join(lines)
+
 
 class SkillLoader:
     """

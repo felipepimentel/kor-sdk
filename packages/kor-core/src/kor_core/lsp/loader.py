@@ -138,7 +138,7 @@ class LSPConfigLoader:
             file_path: Path to the file
             
         Returns:
-            LSPServerConfig or None if no matching config found
+            LSPServerConfig or None if not matched
         """
         suffix = file_path.suffix.lower()
         

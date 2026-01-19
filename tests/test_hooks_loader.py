@@ -4,7 +4,7 @@ Tests for declarative hook loading from hooks.json files.
 import pytest
 import json
 from pathlib import Path
-from kor_core.hooks.loader import HooksLoader
+from kor_core.events import HooksLoader
 
 
 @pytest.fixture

@@ -47,12 +47,26 @@ uv run kor chat
 uv run kor doctor
 ```
 
+### 4. Use in Python
+
+```python
+from kor_core import Kor
+
+# Initialize
+kor = Kor()
+kor.boot()
+
+# Use the facade
+tools = kor.tools.search("file")
+results = kor.run_sync("Analyze this code")
+```
+
 ---
 
 ## 🛠️ CLI Commands
 
 | Command | Description |
-|---|---|
+| --- | --- |
 | `kor boot` | Initializes the Kernel and loads plugins. |
 | `kor chat` | Starts an interactive session with the AI agent. |
 | `kor doctor` | Runs diagnostics on your environment. |

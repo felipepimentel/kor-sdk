@@ -5,6 +5,7 @@ The foundational package for building AI agents with the KOR framework.
 """
 
 from .api import (
+    Kor,
     Kernel,
     ConfigManager,
     KorConfig,
@@ -41,6 +42,9 @@ from .tools.decorators import tool
 from .kernel import get_kernel, set_kernel, reset_kernel
 
 __all__ = [
+    # Facade (Primary API)
+    "Kor",
+    
     # Core
     "Kernel",
     "ConfigManager",

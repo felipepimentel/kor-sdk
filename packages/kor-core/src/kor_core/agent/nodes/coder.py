@@ -33,8 +33,10 @@ def coder_node(state: AgentState):
             
         files_tool = get_tool_from_registry("write_file")
         if not files_tool:
-             from ...tools.file import WriteFileTool
-             files_tool = WriteFileTool()
+             return {
+                "messages": [HumanMessage(content=f"[Coder] 'write_file' tool not found in registry. System misconfigured.", name="Coder")],
+                "next_step": "Supervisor"
+            }
              
         chain = llm.bind_tools([files_tool])
         prompt = (
