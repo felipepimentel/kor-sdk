@@ -23,7 +23,7 @@ def trace(last, show_all):
         for line in f:
             try:
                 events.append(json.loads(line))
-            except:
+            except json.JSONDecodeError:
                 pass
                 
     if not events:
@@ -37,15 +37,18 @@ def trace(last, show_all):
     for ev in events:
         # For our simple grouping, let's say on_agent_start marks a new block
         if ev['event'] == "on_agent_start":
-            if current_run: runs.append(current_run)
+            if current_run:
+                runs.append(current_run)
             current_run = {"type": "Agent", "events": [ev], "start": ev['timestamp']}
         elif ev['event'] == "on_boot":
-            if current_run: runs.append(current_run)
+            if current_run:
+                runs.append(current_run)
             current_run = {"type": "System", "events": [ev], "start": ev['timestamp']}
         elif current_run:
             current_run['events'].append(ev)
             
-    if current_run: runs.append(current_run)
+    if current_run:
+        runs.append(current_run)
 
     # Show last N runs
     target_runs = runs[-last:]

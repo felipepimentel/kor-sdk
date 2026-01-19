@@ -1,10 +1,11 @@
 from ...kernel import get_kernel
 from ..state import AgentState
 from .base import get_tool_from_registry
+from langchain_core.messages import HumanMessage
 
 def coder_node(state: AgentState):
     """Coder Worker. Translates Spec to Code."""
-    last_msg = state['messages'][-1].content
+    # Process based on current state
     
     # 1. Check for Errors (Self-Healing)
     if state.get("errors"):

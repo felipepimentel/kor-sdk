@@ -12,7 +12,7 @@ for plugin_dir in (Path.cwd() / "plugins").iterdir():
     if plugin_dir.is_dir() and (plugin_dir / "src").exists():
         sys.path.insert(0, str(plugin_dir / "src"))
 
-from kor_core.kernel import Kernel
+from kor_core.kernel import Kernel  # noqa: E402
 
 def test_plugin_system():
     """Test that all plugins discover and load correctly."""

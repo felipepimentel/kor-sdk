@@ -3,11 +3,11 @@ import importlib.metadata
 import sys
 import json
 from pathlib import Path
-from typing import List, Type, Dict
+from typing import List, Type, Dict, TYPE_CHECKING
 import logging
 from .plugin import KorPlugin, KorContext
 from .plugin.manifest import PluginManifest, AgentDefinition
-from .config import KorConfig, MCPServerConfig, LSPServerConfig
+from .config import MCPServerConfig, LSPServerConfig
 
 if TYPE_CHECKING:
     from .commands import Command

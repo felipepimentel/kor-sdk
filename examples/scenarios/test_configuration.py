@@ -36,7 +36,7 @@ def test_configuration_system():
     with tempfile.TemporaryDirectory() as tmpdir:
         config_path = Path(tmpdir) / "config.toml"
         manager = ConfigManager(config_path)
-        loaded = manager.load()
+        manager.load()  # Just execute, don't store
         
         if config_path.exists():
             print("    ✅ Config file created automatically")
@@ -95,7 +95,7 @@ def test_configuration_system():
     
     try:
         config.security.paranoid_mode = True
-        if config.security.paranoid_mode == True:
+        if config.security.paranoid_mode:
             print("    ✅ Validated assignment works")
             results["passed"] += 1
     except Exception as e:

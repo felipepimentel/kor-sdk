@@ -3,11 +3,9 @@ Models routes.
 """
 
 from fastapi import APIRouter
-from ..schemas.models import ModelsResponse, KOR_MODELS
+from ..schemas.models import ModelsResponse, KOR_MODELS, Model
 
 router = APIRouter()
-
-from ..schemas.models import Model
 
 @router.get("/v1/models", response_model=ModelsResponse)
 @router.get("/models", response_model=ModelsResponse)

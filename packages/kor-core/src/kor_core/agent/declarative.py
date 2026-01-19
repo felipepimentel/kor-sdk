@@ -6,8 +6,12 @@ Provides support for defining agents using Markdown/YAML files instead of Python
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 import logging
+
+if TYPE_CHECKING:
+    from .registry import AgentRegistry
+    from ..plugin.manifest import AgentDefinition
 
 logger = logging.getLogger(__name__)
 

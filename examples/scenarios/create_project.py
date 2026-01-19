@@ -8,10 +8,10 @@ sdk_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(sdk_root / "packages/kor-core/src"))
 sys.path.insert(0, str(sdk_root / "plugins/kor-plugin-code-graph/src")) 
 
-from langchain_core.messages import HumanMessage
-from kor_core.kernel import get_kernel
-from kor_core.agent.graph import create_graph
-from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.messages import HumanMessage  # noqa: E402
+from kor_core.kernel import get_kernel  # noqa: E402
+from kor_core.agent.graph import create_graph  # noqa: E402
+from langgraph.checkpoint.memory import MemorySaver  # noqa: E402
 
 async def run_scenario():
     print("--- SCENARIO: Create Python Project (gpt-4o-mini) ---")

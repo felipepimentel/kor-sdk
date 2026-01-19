@@ -15,15 +15,15 @@ def get_tool_from_registry(name: str):
             tool_info = registry.get(name)
             if tool_info:
                 tool = tool_info.tool_class()
-                if hasattr(tool, "registry"): tool.registry = registry
+                if hasattr(tool, "registry"):
+                    tool.registry = registry
                 return tool
     except Exception:
         pass
     
     # Fallbacks for built-in tools if registry is missing
-    if name == "terminal": return TerminalTool()
-    if name == "browser": return BrowserTool()
-    return None
-
-    if name == "browser": return BrowserTool()
+    if name == "terminal":
+        return TerminalTool()
+    if name == "browser":
+        return BrowserTool()
     return None

@@ -46,7 +46,7 @@ async def validate_sdk():
     print("\n[4] Agent Flow Simulation: Starting...")
     
     # Inject Mock Input
-    initial_state = {
+    initial_state = {  # noqa: F841 - Kept for reference
         "messages": [HumanMessage(content="Create a python script that prints fibonacci sequence.", name="User")],
         "files_changed": [],
         "errors": []

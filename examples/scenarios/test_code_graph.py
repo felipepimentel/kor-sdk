@@ -150,7 +150,7 @@ class Order:
         
         # 8. Get All Symbols
         print("\n[8] Counting Total Symbols...")
-        all_symbols = db.search_symbols("")  # Empty query gets all
+        all_symbols = db.search_symbols("")  # noqa: F841 - Empty query gets all
         # Note: might not work with empty query
         
         print("    ✅ Code graph operational")

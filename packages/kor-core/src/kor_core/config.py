@@ -103,6 +103,20 @@ class NetworkConfig(BaseConfig):
     connect_timeout: int = 30             # seconds
     read_timeout: int = 120               # seconds
 
+class MCPServerConfig(BaseConfig):
+    """Configuration for an MCP server."""
+    command: str
+    args: List[str] = Field(default_factory=list)
+    env: Dict[str, str] = Field(default_factory=dict)
+    disabled: bool = False
+
+class LSPServerConfig(BaseConfig):
+    """Configuration for an LSP server."""
+    command: str
+    args: List[str] = Field(default_factory=list)
+    languages: List[str] = Field(default_factory=list)
+    env: Dict[str, str] = Field(default_factory=dict)
+
 def default_languages():
     return {
         "python": LanguageConfig(
