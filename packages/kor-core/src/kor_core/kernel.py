@@ -12,8 +12,30 @@ logger = logging.getLogger(__name__)
 class Kernel:
     """
     The Core Orchestrator of the KOR system.
+    
+    The Kernel manages the lifecycle of the KOR SDK, including service registration,
+    plugin loading, configuration management, and event handling. It acts as the
+    central hub for all SDK operations.
+    
+    Attributes:
+        config_manager (ConfigManager): Handles loading and saving configuration.
+        config (KorConfig): The current validated configuration.
+        registry (ServiceRegistry): Central registry for all shared services.
+        agent_registry (AgentRegistry): Registry for agent definitions.
+        llm_registry (LLMRegistry): Registry for LLM providers.
+        lsp_manager (LSPManager): Manager for Language Server Protocol clients.
+        hooks (HookManager): Event emitter for system lifecycle hooks.
+        context (KorContext): Context object shared with plugins.
+        loader (PluginLoader): Discovers and loads external plugins.
     """
     def __init__(self, config_options: Optional[Dict[str, Any]] = None):
+        """
+        Initializes the Kernel.
+        
+        Args:
+            config_options (Optional[Dict[str, Any]]): Optional runtime configuration
+                overrides to apply during initialization.
+        """
         # 1. Load Configuration
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load()
@@ -58,9 +80,16 @@ class Kernel:
         Requests permission for a sensitive action.
         
         Security behavior:
-        - If permission_callback is set, it decides
-        - If paranoid_mode is enabled, always deny
-        - Otherwise, warn and allow (for development convenience)
+        - If permission_callback is set, it decides.
+        - If paranoid_mode is enabled, always deny without callback.
+        - Otherwise, warn and allow (for development convenience).
+
+        Args:
+            action (str): A string identifying the action (e.g., 'terminal_run').
+            details (Any): Additional context about the action.
+            
+        Returns:
+            bool: True if permission is granted, False otherwise.
         """
         if self.permission_callback:
             return self.permission_callback(action, details)
@@ -75,7 +104,7 @@ class Kernel:
         return True
 
     def _register_core_tools(self):
-        """Register built-in tools and services."""
+        """Register built-in tools and services like Terminal, Browser, and File tools."""
         from .tools import ToolRegistry, TerminalTool, BrowserTool, create_search_tool, ReadFileTool, WriteFileTool, ListDirTool
         from .tools.lsp import LSPHoverTool, LSPDefinitionTool
         
@@ -94,7 +123,7 @@ class Kernel:
         registry.register(LSPDefinitionTool(), tags=["lsp", "code", "definition", "navigation"])
 
     def load_plugins(self):
-        """Discovers and loads core and external plugins."""
+        """Discovers and loads core and external plugins from entry points and directories."""
         # 1. Entry-points discovery
         self.loader.discover_entry_points()
         
@@ -104,7 +133,18 @@ class Kernel:
         self.loader.load_directory_plugins(plugins_dir)
 
     async def boot(self):
-        """Starts the kernel lifecycle (asynchronous)."""
+        """
+        Starts the kernel lifecycle asynchronously.
+        
+        This method performs the following:
+        1. Registers the default supervisor agent.
+        2. Discovers and initializes all plugins.
+        3. Configures the model selector and persistence.
+        4. Exports default prompts.
+        5. Emits the ON_BOOT hook.
+        
+        This is the primary way to initialize the KOR environment in async code.
+        """
         if self._is_initialized:
             return
         
@@ -145,13 +185,14 @@ class Kernel:
     def boot_sync(self):
         """
         Starts the kernel lifecycle (synchronous wrapper).
-        Use this in non-async contexts.
+        
+        Convenience method for non-async environments (CLI, scripts).
+        Internally calls boot() and manages the event loop.
         """
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # We are in an async context but called sync boot.
-                # This is tricky in Python. We'll try to use a task for the hooks.
                 self._boot_sequential_sync()
                 loop.create_task(self.hooks.emit(HookEvent.ON_BOOT))
             else:
@@ -190,7 +231,11 @@ class Kernel:
 
 
     async def shutdown(self):
-        """Shuts down the kernel."""
+        """
+        Shuts down the kernel and cleans up resources.
+        
+        Stops all LSP clients and emits the ON_SHUTDOWN hook.
+        """
         logger.info("Shutting down KOR Kernel...")
         
         # Stop LSP Clients
@@ -212,7 +257,11 @@ def get_kernel() -> "Kernel":
     Returns the global Kernel instance.
     
     Uses contextvars for async-safe isolation, allowing each async context
-    to have its own kernel instance if needed.
+    to have its own kernel instance if needed. If no instance exists in the
+    current context, a new one is created.
+    
+    Returns:
+        Kernel: The active Kernel instance.
     """
     kernel = _kernel_context.get()
     if kernel is None:
@@ -223,18 +272,22 @@ def get_kernel() -> "Kernel":
 
 def set_kernel(kernel: "Kernel") -> None:
     """
-    Sets the global Kernel instance.
+    Sets the global Kernel instance for the current context.
     
-    Useful for testing or when using a pre-configured kernel.
+    Useful for testing or when injecting a pre-configured kernel.
+    
+    Args:
+        kernel (Kernel): The Kernel instance to set.
     """
     _kernel_context.set(kernel)
 
 
 def reset_kernel() -> None:
     """
-    Resets the global Kernel instance.
+    Resets the global Kernel instance for the current context.
     
-    Primarily used for testing to ensure a clean state between tests.
+    Primarily used for testing to ensure a clean state between test cases.
     """
     _kernel_context.set(None)
+
 

@@ -1,15 +1,13 @@
-"""
-Tool decorators for creating custom KOR tools.
-"""
-
-from typing import Callable, Type, Optional
+from typing import Callable, Type, Optional, List
 from pydantic import BaseModel, Field, create_model
-from .base import KorTool
 import inspect
+from .base import KorTool
 
 def tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
+    auto_register: bool = False,
+    tags: Optional[List[str]] = None,
 ):
     """
     Decorator to create a KOR tool from a function.
@@ -47,6 +45,18 @@ def tool(
                 return str(func(**kwargs))
         
         DynamicTool.__name__ = f"{tool_name.capitalize()}Tool"
+        
+        if auto_register:
+            from ..kernel import get_kernel
+            try:
+                kernel = get_kernel()
+                registry = kernel.registry.get_service("tools")
+                if registry:
+                    registry.register(DynamicTool(), tags=tags)
+            except Exception:
+                # Kernel might not be initialized or registry service missing
+                pass
+                
         return DynamicTool
     
     # Handle @tool vs @tool() usage

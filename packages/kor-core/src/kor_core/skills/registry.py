@@ -31,88 +31,34 @@ class Skill:
         """Combined text for search indexing."""
         return f"{self.name} {self.description} {' '.join(self.tags)} {self.content[:500]}"
 
-class SkillSearchBackend(ABC):
-    """Abstract base for skill search backends."""
-    
-    @abstractmethod
-    def index(self, skills: List[Skill]) -> None:
-        pass
-    
-    @abstractmethod
-    def search(self, query: str, top_k: int = 5) -> List[Skill]:
-        pass
+from .search import SearchBackend, RegexBackend, BM25Backend
 
-class RegexSkillBackend(SkillSearchBackend):
-    """Simple regex/keyword matching backend for skills."""
+@dataclass
+class Skill:
+    """
+    A skill represents reusable knowledge or procedures.
     
-    def __init__(self):
-        self._skills: List[Skill] = []
+    Skills are typically loaded from markdown files with YAML frontmatter.
+    """
+    name: str
+    description: str
+    content: str  # The actual skill content (instructions, knowledge)
+    tags: List[str] = field(default_factory=list)
+    source_path: Optional[Path] = None
     
-    def index(self, skills: List[Skill]) -> None:
-        self._skills = skills
-    
-    def search(self, query: str, top_k: int = 5) -> List[Skill]:
-        query_lower = query.lower()
-        query_words = set(re.findall(r'\w+', query_lower))
-        
-        scored = []
-        for skill in self._skills:
-            text = skill.searchable_text.lower()
-            matches = sum(1 for word in query_words if word in text)
-            if matches > 0:
-                scored.append((matches, skill))
-        
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [skill for _, skill in scored[:top_k]]
-
-class BM25SkillBackend(SkillSearchBackend):
-    """BM25 ranking backend for skills."""
-    
-    def __init__(self):
-        self._skills: List[Skill] = []
-        self._bm25 = None
-    
-    def index(self, skills: List[Skill]) -> None:
-        self._skills = skills
-        
-        try:
-            from rank_bm25 import BM25Okapi
-        except ImportError:
-            raise ImportError("rank-bm25 is required. Install with: pip install rank-bm25")
-        
-        tokenized_corpus = [skill.searchable_text.lower().split() for skill in skills]
-        self._bm25 = BM25Okapi(tokenized_corpus)
-    
-    def search(self, query: str, top_k: int = 5) -> List[Skill]:
-        if not self._bm25:
-            return []
-        
-        tokenized_query = query.lower().split()
-        scores = self._bm25.get_scores(tokenized_query)
-        
-        indexed_scores = list(enumerate(scores))
-        indexed_scores.sort(key=lambda x: x[1], reverse=True)
-        
-        results = []
-        for idx, score in indexed_scores[:top_k]:
-            if score > 0:
-                results.append(self._skills[idx])
-        
-        return results
+    @property
+    def searchable_text(self) -> str:
+        """Combined text for search indexing."""
+        return f"{self.name} {self.description} {' '.join(self.tags)} {self.content[:500]}"
 
 class SkillRegistry:
     """
     Central registry for skills with pluggable search backend.
-    
-    Usage:
-        registry = SkillRegistry(backend="bm25")
-        registry.register(Skill(name="pytest", description="...", content="..."))
-        results = registry.search("unit testing")
     """
     
     BACKENDS = {
-        "regex": RegexSkillBackend,
-        "bm25": BM25SkillBackend,
+        "regex": RegexBackend[Skill],
+        "bm25": BM25Backend[Skill],
     }
     
     def __init__(self, backend: str = "regex"):
