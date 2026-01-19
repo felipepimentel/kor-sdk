@@ -3,6 +3,7 @@ Prompts package.
 """
 
 from importlib.resources import files
+from pathlib import Path
 from .config import ConfigManager
 
 class PromptLoader:
@@ -49,7 +50,7 @@ class PromptLoader:
         # Assuming layout: repo_root/resources/prompts/
         # kor_core/prompts.py is 5 levels deep in src layout
         try:
-             repo_root = Path(__file__).parents[5] 
+             repo_root = Path(__file__).parents[4] 
              resource_file = repo_root / "resources" / "prompts" / filename
              if resource_file.exists():
                  return resource_file.read_text(encoding="utf-8")
