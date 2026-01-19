@@ -13,7 +13,7 @@ from kor_core.config import ModelRef, ProviderConfig
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-def verify_litellm():
+def test_litellm():
     print("--- Verifying LiteLLM Plugin Flexibility ---")
     
     # 1. Initialize Kernel
@@ -25,6 +25,10 @@ def verify_litellm():
     
     print("[1] Configuring LiteLLM Provider...")
     # API keys should be set in environment variables
+    # Inject fake keys for testing registration logic
+    os.environ["OPENROUTER_API_KEY"] = "sk-fake-openrouter"
+    os.environ["PERPLEXITYAI_API_KEY"] = "sk-fake-perplexity"
+
     openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
     perplexity_key = os.environ.get("PERPLEXITYAI_API_KEY", "")
     
@@ -70,7 +74,7 @@ def verify_litellm():
     print("[3] Loading Plugins & Booting...")
     # Load from workspace
     kernel.loader.load_directory_plugins(Path.cwd() / "plugins")
-    kernel.boot()
+    kernel.boot_sync()
     
     # 5. Verify Registry
     registry = kernel.registry.get_service("llm")

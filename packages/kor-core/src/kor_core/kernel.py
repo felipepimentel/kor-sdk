@@ -43,7 +43,10 @@ class Kernel:
         
         # Override with runtime options if any
         if config_options:
-            pass
+            logger.debug(f"Applying runtime config overrides: {list(config_options.keys())}")
+            self.config_manager.update(config_options)
+            # Re-validate after overrides
+            self.config = self.config_manager.config
 
         # 2. Apply network configuration (proxy, SSL)
         self._apply_network_config()

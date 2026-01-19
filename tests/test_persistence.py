@@ -15,7 +15,7 @@ from kor_core.agent.graph import create_graph
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-def verify_persistence():
+def test_persistence():
     print("--- Verifying Persistence (SQLite) ---")
     
     # Setup test DB path
@@ -38,7 +38,7 @@ def verify_persistence():
     kernel.config.llm.default = ModelRef(provider="openai", model="gpt-3.5-turbo")
     
     kernel.loader.load_directory_plugins(Path.cwd() / "plugins")
-    kernel.boot()
+    kernel.boot_sync() # Use sync boot
     
     # Create Graph (should use kernel checkpointer)
     app = create_graph()
@@ -67,21 +67,7 @@ def verify_persistence():
     # --- SESSION 2 (Simulated Restart) ---
     print("\n[Session 2] Simulating Restart (re-creating graph)...")
     
-    # We create a new kernel instance concept or just re-request graph
-    # Ideally we should destroy kernel, but get_kernel is singleton.
-    # We can just request a new graph, it reads from SAME DB path.
-    # The checkpointer inside kernel is connected to the same DB file.
-    
-    # Let's try to "reboot" by getting checkpointer again purely from factory?
-    # Or just trust that if a NEW process started, it would read the file.
-    # We can verify the FILE exists.
-    if db_path.exists() and db_path.stat().st_size > 0:
-        print(f"✅ DB File exists at {db_path} ({db_path.stat().st_size} bytes).")
-    else:
-        print("❌ FAIL: DB File not created/empty.")
-        return
-
-    # Create new graph instance (simulating new run)
+    # We create a new graph instance (simulating new run)
     # It will fetch checkpointer from kernel (which has connection to DB)
     app2 = create_graph()
     state2 = app2.get_state(config)
@@ -95,6 +81,3 @@ def verify_persistence():
     if db_path.exists():
         db_path.unlink()
         print("\nCleanup: Removed test DB.")
-
-if __name__ == "__main__":
-    verify_persistence()

@@ -230,29 +230,35 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
 
-    def set(self, key: str, value: str) -> None:
+    def update(self, overrides: Dict[str, Any]) -> None:
+        """
+        Updates the in-memory configuration with the provided dictionary.
+        Does NOT save to disk.
+        """
+        for k, v in overrides.items():
+            self.set(k, v, persist=False)
+            
+    def set(self, key: str, value: Any, persist: bool = True) -> None:
         """Sets a configuration value using dot notation (e.g., 'secrets.openai_api_key')."""
-        # Note: simplistic implementation, might need update for deep nesting of LLM config
-        # For now, we keep it simple or we can expand it if needed for the CLI commands.
-        # But since we are moving to manual config mostly, this might be less critical.
-        
         parts = key.lower().split(".")
-        target = self._config
+        
+        # We can't easily set nested attributes on Pydantic models directly with getattr/setattr
+        # cleanly without traversing.
+        
+        # Let's map back to dict, update, and re-validate
+        data = self._config.model_dump()
+        target = data
         
         for part in parts[:-1]:
-            if hasattr(target, part):
-                target = getattr(target, part)
-            elif isinstance(target, dict):
-                target = target.get(part)
-            else:
-                 # Try to handle Pydantic fields that are dicts (like 'providers')
-                 # This is tricky with mixed object/dict. 
-                 # For V1, we recommend editing file manually for complex structs.
-                 pass
-
-        # ... (Legacy logic preserved for basics, but warned)
-        logger.warning("Config.set is limited for complex structures. Please edit config.toml directly.")
-        self.save()
+            target = target.setdefault(part, {})
+        
+        target[parts[-1]] = value
+        
+        # Re-create config to validate
+        self._config = KorConfig(**data)
+        
+        if persist:
+            self.save()
 
     @property
     def config(self) -> KorConfig:

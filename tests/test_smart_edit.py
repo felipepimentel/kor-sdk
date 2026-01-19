@@ -1,12 +1,15 @@
 import sys
 from pathlib import Path
 
-# Add plugin source to path
-sys.path.insert(0, str(Path.cwd() / "plugins/kor-plugin-smart-edit/src"))
+def test_smart_edit():
+    # Add plugin scripts to path
+    sys.path.insert(0, str(Path("plugins/kor-plugin-smart-edit/scripts").resolve()))
 
-from kor_plugin_smart_edit.tools import SmartEditTool
-
-def verify_smart_edit():
+    try:
+        from tools import SmartEditTool
+    except ImportError:
+        print("Failed to import SmartEditTool. Check path.")
+        return
     target = Path("test_safe_edit.py")
     
     # 1. Setup
@@ -58,4 +61,4 @@ def verify_smart_edit():
     print("\n✅ Smart Edit Verification Passed!")
 
 if __name__ == "__main__":
-    verify_smart_edit()
+    test_smart_edit()

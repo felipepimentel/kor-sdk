@@ -3,10 +3,13 @@ Verify Agent Registry and Dynamic Loading.
 """
 from kor_core import Kernel
 
-def test_agents():
+import pytest
+
+@pytest.mark.asyncio
+async def test_agents():
     print("Booting Kernel...")
     k = Kernel()
-    k.boot()
+    await k.boot()
     
     registry = k.registry.get_service("agents")
     agents = registry.list_agents()

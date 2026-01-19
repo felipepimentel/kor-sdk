@@ -39,6 +39,11 @@ class ModelSelector:
         self.config = config
         self._cache: Dict[str, BaseChatModel] = {}
 
+    def clear_cache(self) -> None:
+        """Clears the internal model cache."""
+        self._cache.clear()
+        logger.debug("Model selector cache cleared.")
+
     def get_model(
         self, 
         purpose: str = "default",

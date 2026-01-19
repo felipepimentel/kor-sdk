@@ -5,12 +5,12 @@ import os
 import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from kor_core.agent.persistence import get_sqlite_checkpointer
+from kor_core.agent.persistence import get_checkpointer
 from kor_core.agent.graph import create_graph
 from kor_core import GraphRunner
-from kor_core.kernel import Kernel
+from kor_core.kernel import Kernel, get_kernel
 
-def verify_all():
+def test_professional_flow():
     print("=== Professional Infrastructure Verification ===")
     
     # 1. Setup Environment
@@ -23,18 +23,21 @@ def verify_all():
     
     # 2. Boot Kernel (This triggers telemetry setup)
     print("Booting Kernel...")
-    kernel = Kernel()
-    kernel.boot()
+    # 2. Boot Kernel (This triggers telemetry setup)
+    print("Booting Kernel...")
+    # Use get_kernel ensures we share the instance with create_graph
+    kernel = get_kernel()
+    kernel.boot_sync()
     
     # 3. Test Cycle with Mocks
     # We patch supervisor_node to test transitions
     with patch("kor_core.agent.graph.supervisor_node") as mock_sup:
-        checkpointer = get_sqlite_checkpointer()
+        checkpointer = get_checkpointer(kernel.config.persistence)
         graph = create_graph(checkpointer=checkpointer)
         runner = GraphRunner(graph=graph)
         
-        # Turn 1: Route to Explorer (Discovery Test)
-        mock_sup.side_effect = [{"next_step": "Explorer"}, {"next_step": "FINISH"}]
+        # Turn 1: Route to Researcher (Test a valid node)
+        mock_sup.side_effect = [{"next_step": "Researcher"}, {"next_step": "FINISH"}]
         
         print("Turn 1: Testing Discovery...")
         for event in runner.run("Find tools for testing", thread_id=thread_id):
@@ -62,5 +65,4 @@ def verify_all():
 
     print("=== Verification Complete ===")
 
-if __name__ == "__main__":
-    verify_all()
+

@@ -8,13 +8,14 @@ sys.path.insert(0, str(Path.cwd() / "plugins/kor-plugin-llm-openai/src"))
 
 from kor_core.kernel import Kernel, get_kernel
 from kor_core.config import LLMConfig, ProviderConfig, ModelRef
-from kor_plugin_llm_openai.provider import OpenAIProvider
+# Provider moved to core
+from kor_core.llm.providers.openai import OpenAIProvider
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-def verify_llm_architecture():
+def test_llm_architecture():
     print("--- Verifying LLM Architecture ---")
     
     # 1. Initialize Kernel
@@ -34,7 +35,8 @@ def verify_llm_architecture():
 
     # 3. Boot (loads plugins config)
     print("[3] Booting Kernel...")
-    kernel.boot()
+    # Using sync wrapper for test script simplicity
+    kernel.boot_sync()
     
     # 4. Check Registry
     print("[4] Checking Registry...")
@@ -76,8 +78,11 @@ def verify_llm_architecture():
 
     # 7. Test Nodes Refactoring
     print("[7] Testing nodes.py integration...")
-    from kor_core.agent.nodes import get_model as nodes_get_model
-    model_node = nodes_get_model("supervisor")
+    print("[7] Testing nodes.py integration...")
+    # Nodes rely on Kernel context now, so no direct get_model import.
+    # We verify that getting a model via selector works (covered above).
+    # But if we want to simulate what a node does:
+    model_node = kernel.model_selector.get_model("supervisor")
     if model_node:
         print(f"    Nodes.get_model('supervisor') returned: {model_node.model_name}")
     else:
@@ -87,4 +92,4 @@ def verify_llm_architecture():
     print("\n✅ SUCCESS: LLM Architecture Verified!")
 
 if __name__ == "__main__":
-    verify_llm_architecture()
+    test_llm_architecture()
