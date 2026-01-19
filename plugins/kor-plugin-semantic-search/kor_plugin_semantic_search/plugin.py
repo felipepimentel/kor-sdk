@@ -17,6 +17,6 @@ class SemanticSearchPlugin(KorPlugin):
         ToolRegistry.register_semantic_backend(ChromaDBBackend)
         
         # Register for Skills
-        SkillRegistry.register_semantic_skill_backend(ChromaDBBackend)
+        SkillRegistry.register_semantic_backend(ChromaDBBackend)
         
         logger.info("Registered 'semantic' search backend for Tools and Skills.")

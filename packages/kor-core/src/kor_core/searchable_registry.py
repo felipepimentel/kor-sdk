@@ -143,13 +143,13 @@ class SearchableRegistry(Generic[T]):
         self._items.clear()
         self._indexed = False
 
-
-def register_semantic_backend(backend_class: Type[SearchBackend]) -> None:
-    """
-    Register a custom semantic search backend (plugin extension point).
-    
-    Args:
-        backend_class (Type[SearchBackend]): The custom backend class.
-    """
-    SearchableRegistry.BACKENDS["semantic"] = backend_class
-    logger.info("Registered semantic search backend")
+    @classmethod
+    def register_semantic_backend(cls, backend_class: Type[SearchBackend]) -> None:
+        """
+        Register a custom semantic search backend (plugin extension point).
+        
+        Args:
+            backend_class (Type[SearchBackend]): The custom backend class.
+        """
+        cls.BACKENDS["semantic"] = backend_class
+        logger.info("Registered semantic search backend")
