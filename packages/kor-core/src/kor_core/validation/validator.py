@@ -119,7 +119,7 @@ class CommandValidator(BaseValidator):
 
         elif self.output_format == "text":
             # Generic Text Parser (Line:Message)
-            # TODO: Implement regex parser if needed.
+            # Implemented as pass for now, will be implemented when needed.
             pass
             
         return diagnostics

@@ -187,23 +187,12 @@ class Kernel:
         except Exception as e:
             logger.warning(f"Failed to register LiteLLM provider: {e}")
 
-    async def boot(self):
-        """
-        Starts the kernel lifecycle asynchronously.
-        
-        This method performs the following:
-        1. Registers the default supervisor agent.
-        2. Discovers and initializes all plugins.
-        3. Configures the model selector and persistence.
-        4. Exports default prompts.
-        5. Emits the ON_BOOT hook.
-        
-        This is the primary way to initialize the KOR environment in async code.
-        """
+    def _initialize_internal(self):
+        """Internal helper for common initialization steps (Async/Sync agnostic)."""
         if self._is_initialized:
             return
-        
-        logger.info(f"Booting KOR Kernel (User: {self.config.user.name or 'Guest'})...")
+
+        logger.info(f"Initializing KOR Kernel (User: {self.config.user.name or 'Guest'})...")
         
         # Register default internal agent
         from .plugin.manifest import AgentDefinition
@@ -217,10 +206,11 @@ class Kernel:
         # Register built-in LLM providers
         self._register_builtin_providers()
 
+        # Load Plugins
         self.load_plugins()
         self.loader.load_plugins(self.context)
         
-        # Initialize Model Selector (after plugins loaded providers)
+        # Initialize Model Selector
         from .llm import ModelSelector
         self.model_selector = ModelSelector(self.llm_registry, self.config.llm)
         
@@ -229,63 +219,44 @@ class Kernel:
         self.checkpointer = get_checkpointer(self.config.persistence)
         self.registry.register_service("checkpointer", self.checkpointer)
         
-        # Export default prompts for user customization
+        # Export default prompts
         from .prompts import PromptLoader
         PromptLoader.export_defaults()
         
         self._is_initialized = True
+
+    async def boot(self):
+        """
+        Starts the kernel lifecycle asynchronously.
+        This is the primary way to initialize the KOR environment in async code.
+        """
+        if self._is_initialized:
+            return
+            
+        self._initialize_internal()
         
         # Emit on_boot hook
         await self.hooks.emit(HookEvent.ON_BOOT)
-        
         logger.info("KOR Kernel Ready.")
 
     def boot_sync(self):
         """
         Starts the kernel lifecycle (synchronous wrapper).
-        
         Convenience method for non-async environments (CLI, scripts).
-        Internally calls boot() and manages the event loop.
         """
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # We are in an async context but called sync boot.
-                self._boot_sequential_sync()
+                # Initialize internal state synchronously
+                self._initialize_internal()
+                # Schedule hook emission for later
                 loop.create_task(self.hooks.emit(HookEvent.ON_BOOT))
             else:
                 loop.run_until_complete(self.boot())
         except RuntimeError:
             # No loop exists
             asyncio.run(self.boot())
-
-    def _boot_sequential_sync(self):
-        """Internal helper for sync boot setup (excluding async hooks)."""
-        if self._is_initialized:
-            return
-            
-        from .plugin.manifest import AgentDefinition
-        self.agent_registry.register(AgentDefinition(
-            id="default-supervisor",
-            name="Default Supervisor",
-            description="Standard supervisor with Coder and Researcher",
-            entry="kor_core.agent.graph:create_graph"
-        ))
-
-        self.load_plugins()
-        self.loader.load_plugins(self.context)
-        
-        from .llm import ModelSelector
-        self.model_selector = ModelSelector(self.llm_registry, self.config.llm)
-        
-        from .agent.persistence import get_checkpointer
-        self.checkpointer = get_checkpointer(self.config.persistence)
-        self.registry.register_service("checkpointer", self.checkpointer)
-        
-        from .prompts import PromptLoader
-        PromptLoader.export_defaults()
-        
-        self._is_initialized = True
 
 
     async def shutdown(self):

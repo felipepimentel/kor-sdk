@@ -37,12 +37,6 @@ class ModelSelector:
         """
         self.registry = registry
         self.config = config
-        self._cache: Dict[str, BaseChatModel] = {}
-
-    def clear_cache(self) -> None:
-        """Clears the internal model cache."""
-        self._cache.clear()
-        logger.debug("Model selector cache cleared.")
 
     def get_model(
         self, 
@@ -67,12 +61,6 @@ class ModelSelector:
         Raises:
             ConfigurationError: If no model can be resolved for the given purpose.
         """
-        
-        # Helper to check cache
-        cache_key = f"{purpose}:{override or ''}"
-        if self.config.cache_models and cache_key in self._cache:
-            return self._cache[cache_key]
-
         model = None
 
         # 1. Explicit Override
@@ -99,10 +87,6 @@ class ModelSelector:
                 f"Available purposes: {available_purposes}"
             )
             raise ConfigurationError(msg)
-            
-        # Cache if enabled
-        if self.config.cache_models:
-            self._cache[cache_key] = model
             
         return model
 
