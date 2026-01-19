@@ -157,6 +157,14 @@ class ToolRegistry:
     def get_all(self) -> List[ToolInfo]:
         """Get all registered tools."""
         return list(self._tools.values())
+        
+    def get_tool(self, name: str) -> Optional[KorTool]:
+        """Get an INSTANCE of the tool by name."""
+        info = self._tools.get(name)
+        if not info or not info.tool_class:
+            return None
+        # Instantiate fresh
+        return info.tool_class()
     
     def format_results(self, results: List[ToolInfo]) -> str:
         """Format search results as a string for the agent."""

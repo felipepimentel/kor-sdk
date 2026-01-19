@@ -1,0 +1,10 @@
+{
+    "id": "kor-llm-litellm",
+    "name": "litellm-provider",
+    "version": "0.1.0",
+    "description": "Universal LLM support via LiteLLM",
+    "entry_point": "src/kor_plugin_llm_litellm/__init__.py",
+    "provides": [
+        "llm-provider-litellm"
+    ]
+}

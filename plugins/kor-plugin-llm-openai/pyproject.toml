@@ -1,0 +1,20 @@
+[project]
+name = "kor-plugin-llm-openai"
+version = "0.1.0"
+description = "OpenAI LLM Provider for KOR SDK"
+authors = [{name = "KOR Team", email = "team@kor.dev"}]
+dependencies = [
+    "kor-core",
+    "langchain-openai>=0.0.5"
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kor_plugin_llm_openai"]
+
+[project.entry-points."kor.plugins"]
+openai_llm = "kor_plugin_llm_openai:OpenAIPlugin"

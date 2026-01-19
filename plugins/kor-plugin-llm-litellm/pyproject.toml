@@ -1,0 +1,21 @@
+[project]
+name = "kor-plugin-llm-litellm"
+version = "0.1.0"
+description = "LiteLLM Universal Provider for KOR SDK"
+authors = [{name = "KOR Team", email = "team@kor.dev"}]
+dependencies = [
+    "kor-core",
+    "litellm",
+    "langchain-community"
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kor_plugin_llm_litellm"]
+
+[project.entry-points."kor.plugins"]
+litellm_provider = "kor_plugin_llm_litellm:LiteLLMPlugin"

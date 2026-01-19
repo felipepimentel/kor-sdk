@@ -26,6 +26,17 @@ class Kernel:
         self.registry = ServiceRegistry()
         self.agent_registry = AgentRegistry()
         self.registry.register_service("agents", self.agent_registry)
+        
+        # LLM Services
+        from .llm import LLMRegistry
+        self.llm_registry = LLMRegistry()
+        self.registry.register_service("llm", self.llm_registry)
+        
+        # LSP Services
+        from .lsp.manager import LSPManager
+        self.lsp_manager = LSPManager(self.config.languages)
+        self.registry.register_service("lsp", self.lsp_manager)
+        
         self.hooks = HookManager()
         from .events.telemetry import setup_telemetry
         setup_telemetry(self.hooks)
@@ -38,19 +49,21 @@ class Kernel:
         self.loader = PluginLoader()
         self._is_initialized = False
         self.permission_callback: Optional[Callable[[str, Any], bool]] = None
+        
+        # Placeholder for selector (initialized in boot)
+        self.model_selector = None
 
     def request_permission(self, action: str, details: Any) -> bool:
         """Requests permission for a sensitive action."""
         if self.permission_callback:
             return self.permission_callback(action, details)
         
-        # Fallback to emitting hook and assuming true if no one handles it?
-        # In a real professional system, we'd wait for an event response.
         return True # Default to true for now if not set
 
     def _register_core_tools(self):
         """Register built-in tools and services."""
-        from .tools import ToolRegistry, TerminalTool, BrowserTool, create_search_tool
+        from .tools import ToolRegistry, TerminalTool, BrowserTool, create_search_tool, ReadFileTool, WriteFileTool, ListDirTool
+        from .tools.lsp import LSPHoverTool, LSPDefinitionTool
         
         # Initialize Registry service
         registry = ToolRegistry(backend="bm25")
@@ -59,7 +72,12 @@ class Kernel:
         # Register core tools
         registry.register(TerminalTool(), tags=["shell", "execute", "commands", "terminal", "system"])
         registry.register(BrowserTool(), tags=["web", "browse", "search", "http", "internet"])
+        registry.register(ReadFileTool(), tags=["file", "read", "fs", "system"])
+        registry.register(WriteFileTool(), tags=["file", "write", "create", "fs", "system"])
+        registry.register(ListDirTool(), tags=["file", "list", "dir", "fs", "system"])
         registry.register(create_search_tool(registry), tags=["discovery", "find", "tools", "help"])
+        registry.register(LSPHoverTool(), tags=["lsp", "code", "hover", "docs"])
+        registry.register(LSPDefinitionTool(), tags=["lsp", "code", "definition", "navigation"])
 
     def load_plugins(self):
         """Discovers and loads core and external plugins."""
@@ -90,6 +108,15 @@ class Kernel:
         self.load_plugins()
         self.loader.load_plugins(self.context)
         
+        # Initialize Model Selector (after plugins loaded providers)
+        from .llm import ModelSelector
+        self.model_selector = ModelSelector(self.llm_registry, self.config.llm)
+        
+        # Initialize Persistence
+        from .agent.persistence import get_checkpointer
+        self.checkpointer = get_checkpointer(self.config.persistence)
+        self.registry.register_service("checkpointer", self.checkpointer)
+        
         # Export default prompts for user customization
         from .prompts import PromptLoader
         PromptLoader.export_defaults()
@@ -105,10 +132,15 @@ class Kernel:
         
         logger.info("KOR Kernel Ready.")
 
-    def shutdown(self):
+    async def shutdown(self):
         """Shuts down the kernel."""
         logger.info("Shutting down KOR Kernel...")
-        asyncio.get_event_loop().run_until_complete(self.hooks.emit(HookEvent.ON_SHUTDOWN))
+        
+        # Stop LSP Clients
+        if hasattr(self, "lsp_manager"):
+            await self.lsp_manager.stop_all()
+            
+        await self.hooks.emit(HookEvent.ON_SHUTDOWN)
         self._is_initialized = False
 
 def get_kernel():

@@ -1,6 +1,6 @@
 {
     "id": "kor-plugin-openai-api",
-    "name": "OpenAI API",
+    "name": "kor-plugin-openai-api",
     "version": "0.1.0",
     "description": "Exposes KOR agents via an OpenAI-compatible REST API",
     "author": "KOR Team",

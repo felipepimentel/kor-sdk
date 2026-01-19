@@ -1,0 +1,10 @@
+{
+    "id": "kor-llm-openai",
+    "name": "openai-llm-provider",
+    "version": "0.1.0",
+    "description": "OpenAI integration for KOR",
+    "entry_point": "src/kor_plugin_llm_openai/__init__.py",
+    "provides": [
+        "llm-provider-openai"
+    ]
+}
