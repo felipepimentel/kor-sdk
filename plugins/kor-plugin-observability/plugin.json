@@ -1,0 +1,10 @@
+{
+    "name": "kor-plugin-observability",
+    "version": "0.1.0",
+    "description": "Agent and session monitoring with metrics collection",
+    "provides": [
+        "monitoring",
+        "metrics",
+        "observability"
+    ]
+}

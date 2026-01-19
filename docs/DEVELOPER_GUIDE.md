@@ -104,3 +104,157 @@ Plugins can be discovered via:
 - **Dependency Issues**: If LLM providers are missing, ensure you have installed the optional extras: `pip install kor-core[openai,anthropic]`.
 - **Permission Errors**: If actions are denied, ensure you have set a `permission_callback` on the Kernel or disabled `paranoid_mode`.
 - **Plugin Loading**: Run with `LOG_LEVEL=DEBUG` to see detailed plugin discovery logs.
+
+---
+
+## Declarative Plugins (Zero-Code)
+
+KOR SDK supports **declarative plugins** that require no Python code. You can create full-featured plugins using only JSON, Markdown, and YAML files.
+
+### Plugin Structure
+
+```plaintext
+my-plugin/
+├── plugin.json              # Manifest (required)
+├── commands/                # Slash commands as Markdown
+│   └── deploy.md
+├── agents/                  # Agent definitions
+│   └── reviewer.md
+├── skills/                  # Skills (SKILL.md files)
+│   └── code-review/
+│       └── SKILL.md
+├── hooks.json               # Event handlers
+├── .mcp.json                # MCP server configs
+├── .lsp.json                # LSP server configs
+└── src/                     # OPTIONAL: Python code
+```
+
+### Minimal Plugin (plugin.json only)
+
+```json
+{
+    "name": "my-plugin",
+    "version": "0.1.0",
+    "description": "A simple declarative plugin"
+}
+```
+
+That's it! No Python code required. The SDK auto-discovers resources.
+
+---
+
+### Slash Commands
+
+Create markdown files in `commands/` with YAML frontmatter:
+
+```markdown
+---
+name: deploy
+description: Deploy the application
+args: [environment, version]
+---
+
+## Steps
+
+1. Build the project: `npm run build`
+2. Push to registry
+3. Notify team
+```
+
+---
+
+### Declarative Agents
+
+Define agents in `agents/` as markdown:
+
+```markdown
+---
+id: code-reviewer
+name: Code Reviewer
+description: Reviews code for quality
+skills: [code-review, best-practices]
+tools: [read-file, search-symbols]
+model: gpt-4o
+---
+
+## System Prompt
+
+You are a senior code reviewer. Analyze code for quality,
+security issues, and best practices.
+```
+
+---
+
+### Hooks (hooks.json)
+
+Declarative event handlers:
+
+```json
+{
+  "on_agent_start": [
+    {"log": {"message": "Agent {agent_id} starting...", "level": "info"}}
+  ],
+  "on_tool_call": [
+    {"command": {"cmd": "echo 'Tool: {tool_name}'"}}
+  ]
+}
+```
+
+Supported actions: `log`, `emit_metric`, `command`, `set_context`
+
+---
+
+### MCP Configuration (.mcp.json)
+
+```json
+{
+  "github": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "env": {"GITHUB_TOKEN": "${GITHUB_TOKEN}"}
+  }
+}
+```
+
+---
+
+### LSP Configuration (.lsp.json)
+
+```json
+{
+  "python": {
+    "command": "pylsp",
+    "extensionToLanguage": {".py": "python"}
+  }
+}
+```
+
+---
+
+## Advanced: Python Plugins
+
+For complex logic, add an `entry_point` to your manifest:
+
+```json
+{
+    "name": "my-plugin",
+    "version": "0.1.0",
+    "description": "Plugin with custom Python logic",
+    "entry_point": "my_plugin:MyPluginClass"
+}
+```
+
+Then create `src/my_plugin/__init__.py`:
+
+```python
+from kor_core import KorPlugin, KorContext
+
+class MyPluginClass(KorPlugin):
+    @property
+    def id(self) -> str:
+        return "my-plugin"
+    
+    def initialize(self, context: KorContext) -> None:
+        # Custom initialization
+        pass
+```

@@ -1,13 +1,9 @@
 {
     "name": "kor-plugin-code-graph",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Provides semantic code indexing and symbol search using Tree-sitter and SQLite.",
-    "entry_point": "kor_plugin_code_graph:CodeGraphPlugin",
     "provides": [
         "code-graph",
         "search-symbols"
-    ],
-    "dependencies": [
-        "kor-core"
     ]
 }

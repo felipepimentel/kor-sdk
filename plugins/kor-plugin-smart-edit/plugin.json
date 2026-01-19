@@ -1,12 +1,8 @@
 {
     "name": "kor-plugin-smart-edit",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Provides surgical, verified code editing capabilities (Shadow Workspace).",
-    "entry_point": "kor_plugin_smart_edit:SmartEditPlugin",
     "provides": [
         "smart-edit"
-    ],
-    "dependencies": [
-        "kor-core"
     ]
 }

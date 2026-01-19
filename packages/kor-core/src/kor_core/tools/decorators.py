@@ -1,6 +1,8 @@
 from typing import Callable, Type, Optional, List
 from pydantic import BaseModel, Field, create_model
 import inspect
+import asyncio
+import warnings
 from .base import KorTool
 
 def tool(
@@ -12,6 +14,8 @@ def tool(
     """
     Decorator to create a KOR tool from a function.
     
+    Supports both synchronous and asynchronous functions.
+    
     Usage:
         @tool
         def my_tool(query: str) -> str:
@@ -19,12 +23,14 @@ def tool(
             return "result"
     
         @tool(name="custom_name", description="Custom description")
-        def another_tool(x: int) -> int:
-            return x * 2
+        async def async_tool(url: str) -> str:
+            '''Fetches data asynchronously.'''
+            return await fetch(url)
     """
     def decorator(func: Callable) -> Type[KorTool]:
         tool_name = name or func.__name__
         tool_description = description or func.__doc__ or "No description"
+        is_async = asyncio.iscoroutinefunction(func)
         
         # Build args schema from function signature
         sig = inspect.signature(func)
@@ -42,7 +48,34 @@ def tool(
             args_schema: Type[BaseModel] = ArgsSchema
             
             def _run(self, **kwargs) -> str:
-                return str(func(**kwargs))
+                """Synchronous execution - handles both sync and async functions."""
+                result = func(**kwargs)
+                if asyncio.iscoroutine(result):
+                    # Async function called from sync context
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # Already in async context - use nest_asyncio pattern or warn
+                        warnings.warn(
+                            f"Async tool '{tool_name}' called synchronously from async context. "
+                            "Consider using _arun() instead."
+                        )
+                        import nest_asyncio
+                        nest_asyncio.apply()
+                        return str(loop.run_until_complete(result))
+                    except RuntimeError:
+                        # No running loop - safe to run
+                        return str(asyncio.run(result))
+                    except ImportError:
+                        # nest_asyncio not installed
+                        return str(asyncio.run(result))
+                return str(result)
+            
+            async def _arun(self, **kwargs) -> str:
+                """Asynchronous execution - handles both sync and async functions."""
+                result = func(**kwargs)
+                if asyncio.iscoroutine(result):
+                    return str(await result)
+                return str(result)
         
         DynamicTool.__name__ = f"{tool_name.capitalize()}Tool"
         
@@ -53,9 +86,12 @@ def tool(
                 registry = kernel.registry.get_service("tools")
                 if registry:
                     registry.register(DynamicTool(), tags=tags)
-            except Exception:
-                # Kernel might not be initialized or registry service missing
-                pass
+            except Exception as e:
+                warnings.warn(
+                    f"Auto-registration of tool '{tool_name}' failed: {e}. "
+                    "Tool will not be available until manually registered.",
+                    RuntimeWarning
+                )
                 
         return DynamicTool
     
@@ -66,3 +102,4 @@ def tool(
         return decorator(func)
     
     return decorator
+

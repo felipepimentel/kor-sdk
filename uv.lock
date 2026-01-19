@@ -567,7 +567,7 @@ provides-extras = ["openai", "anthropic", "search", "all"]
 [[package]]
 name = "kor-plugin-openai-api"
 version = "0.1.0"
-source = { editable = "plugins/kor-plugin-openai-api" }
+source = { editable = "apps/openai-api" }
 dependencies = [
     { name = "fastapi" },
     { name = "kor-core" },
@@ -603,7 +603,7 @@ dev = [
 requires-dist = [
     { name = "kor-cli", editable = "packages/kor-cli" },
     { name = "kor-core", editable = "packages/kor-core" },
-    { name = "kor-plugin-openai-api", editable = "plugins/kor-plugin-openai-api" },
+    { name = "kor-plugin-openai-api", editable = "apps/openai-api" },
 ]
 
 [package.metadata.requires-dev]

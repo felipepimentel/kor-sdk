@@ -13,6 +13,10 @@ class TerminalTool(KorTool):
     args_schema: Type[BaseModel] = TerminalInput
     requires_confirmation: bool = True
     
+    # Sandbox Configuration
+    use_sandbox: bool = False
+    sandbox_image: str = "python:3.12-slim"
+    
     # Callback for confirmation (set by CLI)
     confirmation_callback: Optional[Callable[[str], bool]] = None
 
@@ -29,9 +33,31 @@ class TerminalTool(KorTool):
             if not k.request_permission("terminal_command", command):
                 return "[Permission Denied]"
         
+        # 3. Apply Sandboxing if enabled
+        final_command = command
+        if self.use_sandbox:
+            import os
+            cwd = os.getcwd()
+            # Construct Docker command
+            # -rm: Remove container after exit
+            # -v: Mount current directory to /workspace
+            # -w: Set working directory to /workspace
+            # --network none: Disable network by default for safety (can be configurable later)
+            # user: Run as current user to avoid permission issues on files? 
+            #       (Often tricky in Docker, defaulting to root inside container for now 
+            #       but mapping files might be issue. Kept simple for V1)
+            
+            # Simple sanitization for strict shell usage
+            safe_cmd = shlex.quote(command)
+            
+            final_command = (
+                f"docker run --rm -v {cwd}:/workspace -w /workspace "
+                f"{self.sandbox_image} /bin/sh -c {safe_cmd}"
+            )
+
         try:
             result = subprocess.run(
-                command, 
+                final_command, 
                 shell=True, 
                 capture_output=True, 
                 text=True, 

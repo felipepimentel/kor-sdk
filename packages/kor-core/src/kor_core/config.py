@@ -93,6 +93,16 @@ class PersistenceConfig(BaseConfig):
     type: str = "sqlite"  # options: "sqlite", "memory"
     path: Optional[str] = None  # db path or connection string
 
+class NetworkConfig(BaseConfig):
+    """Network configuration for proxy, SSL, and timeouts."""
+    http_proxy: Optional[str] = None      # e.g., "http://proxy:8080"
+    https_proxy: Optional[str] = None
+    no_proxy: str = "localhost,127.0.0.1"
+    ca_bundle: Optional[str] = None       # Custom CA cert path
+    verify_ssl: bool = True
+    connect_timeout: int = 30             # seconds
+    read_timeout: int = 120               # seconds
+
 def default_languages():
     return {
         "python": LanguageConfig(
@@ -109,6 +119,9 @@ class KorConfig(BaseConfig):
     
     # Persistence
     persistence: PersistenceConfig = Field(default_factory=PersistenceConfig)
+    
+    # Network (proxy, SSL, timeouts)
+    network: NetworkConfig = Field(default_factory=NetworkConfig)
     
     # New LLM Section
     llm: LLMConfig = Field(default_factory=LLMConfig)
@@ -145,11 +158,18 @@ class ConfigManager:
             data = self._interpolate_env_vars(data)
             
             self._config = KorConfig(**data)
+            self._validate_config()
             logger.debug(f"Loaded config from {self.config_path}")
         except Exception as e:
             logger.error(f"Failed to load config: {e}. Using defaults (which might fail validation if LLM not configured).")
         
         return self._config
+
+    def _validate_config(self):
+        """Perform semantic validation on the configuration."""
+        if not self._config.llm.default and not self._config.llm.purposes:
+            # Only warn if no LLM configured at all, as it might be fine for some use cases
+            logger.warning("No default LLM configuration found ([llm.default]). AI features may fail.")
 
     def _migrate_legacy_config(self, data: dict) -> dict:
         """Migrate old [model] format to new [llm] format."""

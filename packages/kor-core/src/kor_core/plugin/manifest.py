@@ -60,6 +60,11 @@ class PluginManifest(BaseModel):
     agents_dir: str = "agents"
     skills_dir: str = "skills"
     
+    # Declarative config file paths (relative to plugin root)
+    hooks_path: str = "hooks.json"
+    mcp_path: str = ".mcp.json"
+    lsp_path: str = ".lsp.json"
+    
     @field_validator('dependencies', mode='before')
     @classmethod
     def normalize_dependencies(cls, v):

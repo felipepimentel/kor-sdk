@@ -1,0 +1,5 @@
+{
+    "name": "kor-plugin-demo-declarative",
+    "version": "0.1.0",
+    "description": "Demo plugin showing all declarative features - no Python code required!"
+}

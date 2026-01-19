@@ -1,0 +1,18 @@
+{
+    "on_boot": [
+        {
+            "log": {
+                "message": "Demo plugin loaded!",
+                "level": "info"
+            }
+        }
+    ],
+    "on_agent_start": [
+        {
+            "log": {
+                "message": "Demo agent starting: {agent_id}",
+                "level": "debug"
+            }
+        }
+    ]
+}

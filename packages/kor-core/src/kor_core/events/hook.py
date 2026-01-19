@@ -1,4 +1,4 @@
-from typing import Dict, List, Callable, Any
+from typing import Dict, List, Callable, Any, Protocol
 import logging
 from enum import Enum
 
@@ -44,6 +44,11 @@ class HookEvent(str, Enum):
     ON_PERMISSION_GRANTED = "on_permission_granted"
     ON_PERMISSION_DENIED = "on_permission_denied"
 
+class TelemetrySink(Protocol):
+    """Protocol for telemetry sinks."""
+    def capture(self, event: HookEvent, data: Dict[str, Any]):
+        ...
+
 class HookManager:
     """
     Event Bus for KOR.
@@ -52,11 +57,17 @@ class HookManager:
     def __init__(self):
         self._hooks: Dict[str, List[Callable]] = {e.value: [] for e in HookEvent}
         self._global_listeners: List[Callable] = []
+        self._telemetry_sinks: List[TelemetrySink] = []
 
     def register_global_listener(self, callback: Callable):
         """Register a callback that receives every emitted event."""
         self._global_listeners.append(callback)
         logger.debug("Registered global hook listener")
+
+    def register_telemetry_sink(self, sink: TelemetrySink):
+        """Register a telemetry sink."""
+        self._telemetry_sinks.append(sink)
+        logger.info(f"Registered telemetry sink: {sink}")
 
     def register(self, event: HookEvent, callback: Callable):
         """Register a function to be called on event."""
@@ -74,7 +85,16 @@ class HookManager:
 
     async def emit(self, event: HookEvent, *args, **kwargs):
         """Emit an event, awaiting all async listeners."""
-        # 1. Global listeners
+        data = kwargs  # Capture kwargs as data context for telemetry
+        
+        # 1. Telemetry Sinks (Fire and Forget / Safe)
+        for sink in self._telemetry_sinks:
+            try:
+                sink.capture(event, data)
+            except Exception as e:
+                logger.warning(f"Telemetry sink failed: {e}")
+
+        # 2. Global listeners
         for listener in self._global_listeners:
             try:
                 if is_async_callable(listener):
@@ -84,7 +104,7 @@ class HookManager:
             except Exception as e:
                 logger.error(f"Error in global hook listener {listener}: {e}")
 
-        # 2. Specific listeners
+        # 3. Specific listeners
         listeners = self._hooks.get(event.value, [])
         for listener in listeners:
             try:
@@ -97,7 +117,16 @@ class HookManager:
 
     def emit_sync(self, event: HookEvent, *args, **kwargs):
         """Synchronous emit for non-async contexts."""
-        # 1. Global listeners
+        data = kwargs
+
+        # 1. Telemetry Sinks
+        for sink in self._telemetry_sinks:
+            try:
+                sink.capture(event, data)
+            except Exception as e:
+                logger.warning(f"Telemetry sink failed: {e}")
+
+        # 2. Global listeners
         for listener in self._global_listeners:
             try:
                 if not is_async_callable(listener):
@@ -105,7 +134,7 @@ class HookManager:
             except Exception as e:
                 logger.error(f"Error in global hook listener {listener}: {e}")
 
-        # 2. Specific listeners
+        # 3. Specific listeners
         listeners = self._hooks.get(event.value, [])
         for listener in listeners:
             try:

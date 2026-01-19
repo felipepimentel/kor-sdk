@@ -1,0 +1,9 @@
+{
+    "name": "kor-plugin-token-manager",
+    "version": "0.1.0",
+    "description": "Token usage tracking and budget management for LLM calls",
+    "provides": [
+        "token-tracking",
+        "budget-management"
+    ]
+}

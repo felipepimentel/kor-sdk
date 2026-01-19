@@ -4,5 +4,6 @@
 **/out
 **/build
 **/dist
-*test*
+*test*db*
+*test*report*
 

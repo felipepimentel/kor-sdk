@@ -77,6 +77,58 @@ class ServiceRegistry:
         """
         return self._tools.get(name)
 
+    # Typed accessors for common services
+    def get_tool_registry(self) -> "ToolRegistry":
+        """
+        Get the tool registry service with proper typing.
+        
+        Returns:
+            ToolRegistry: The registered tool registry.
+            
+        Raises:
+            KeyError: If the tools service is not registered.
+        """
+        from ..tools.registry import ToolRegistry
+        return self.get_service("tools", ToolRegistry)
+
+    def get_llm_registry(self) -> "LLMRegistry":
+        """
+        Get the LLM registry service with proper typing.
+        
+        Returns:
+            LLMRegistry: The registered LLM registry.
+            
+        Raises:
+            KeyError: If the llm service is not registered.
+        """
+        from ..llm.registry import LLMRegistry
+        return self.get_service("llm", LLMRegistry)
+
+    def get_agent_registry(self) -> "AgentRegistry":
+        """
+        Get the agent registry service with proper typing.
+        
+        Returns:
+            AgentRegistry: The registered agent registry.
+            
+        Raises:
+            KeyError: If the agents service is not registered.
+        """
+        from ..agent.registry import AgentRegistry
+        return self.get_service("agents", AgentRegistry)
+
+    def has_service(self, name: str) -> bool:
+        """
+        Check if a service is registered.
+        
+        Args:
+            name (str): The name of the service to check.
+            
+        Returns:
+            bool: True if the service exists, False otherwise.
+        """
+        return name in self._services
+
 class KorContext:
     """
     Context object injected into plugins during initialization.

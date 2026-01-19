@@ -31,6 +31,7 @@ class MCPClient:
         self.state = ConnectionState.DISCONNECTED
         self.max_retries = 3
         self.initial_backoff = 1.0 # seconds
+        self._reconnect_attempts = 0
 
     async def connect(self, retry: bool = True):
         """
@@ -61,6 +62,7 @@ class MCPClient:
                 await self.session.initialize()
                 
                 self.state = ConnectionState.CONNECTED
+                self._reconnect_attempts = 0  # Reset on successful connection
                 logger.info("Successfully connected to MCP server.")
                 return
             except Exception as e:
@@ -116,5 +118,18 @@ class MCPClient:
         except Exception as e:
             logger.error(f"MCP call_tool failed ({name}): {e}")
             self.state = ConnectionState.FAILED
+            
+            # Auto-reconnect on transient failures
+            # We assume most errors here might be pipe broken or connection lost
+            if self._reconnect_attempts < 1:
+                logger.warning(f"Attempting valid auto-reconnect for tool '{name}'...")
+                self._reconnect_attempts += 1
+                try:
+                    await self.connect()
+                    return await self.session.call_tool(name, arguments)
+                except Exception as retry_err:
+                    logger.error(f"Auto-reconnect failed: {retry_err}")
+                    # Fall through to raise original or new error
+            
             raise ToolError(f"Failed to call MCP tool '{name}': {e}")
 

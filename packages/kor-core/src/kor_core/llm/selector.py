@@ -1,4 +1,4 @@
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING, Dict
 import logging
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -20,6 +20,8 @@ class ModelSelector:
     for a given task (e.g., coding, planning, supervisor). It follows a
     priority-based selection from configuration.
     
+    Supports caching of model instances when config.cache_models is True.
+    
     Attributes:
         registry (LLMRegistry): The registry of available LLM providers.
         config (LLMConfig): The LLM section of the system configuration.
@@ -35,6 +37,7 @@ class ModelSelector:
         """
         self.registry = registry
         self.config = config
+        self._cache: Dict[str, BaseChatModel] = {}
 
     def get_model(
         self, 
@@ -60,29 +63,43 @@ class ModelSelector:
             ConfigurationError: If no model can be resolved for the given purpose.
         """
         
+        # Helper to check cache
+        cache_key = f"{purpose}:{override or ''}"
+        if self.config.cache_models and cache_key in self._cache:
+            return self._cache[cache_key]
+
+        model = None
+
         # 1. Explicit Override
         if override:
-            return self._resolve_override(override)
+            model = self._resolve_override(override)
             
         # 2. Purpose-Specific Lookup
-        if purpose in self.config.purposes:
+        elif purpose in self.config.purposes:
             ref = self.config.purposes[purpose]
             logger.debug(f"Selected model for purpose '{purpose}': {ref.provider}/{ref.model}")
-            return self._create_model_from_ref(ref)
+            model = self._create_model_from_ref(ref)
             
         # 3. Fallback to Default
-        if self.config.default:
+        elif self.config.default:
             logger.debug(f"Using default model for purpose '{purpose}'")
-            return self._create_model_from_ref(self.config.default)
+            model = self._create_model_from_ref(self.config.default)
             
         # 4. No configuration found -> Error
-        available_purposes = list(self.config.purposes.keys())
-        msg = (
-            f"No LLM configuration found for purpose '{purpose}' and no [llm.default] set.\n"
-            f"Please configure [llm.purposes.{purpose}] or a fallback [llm.default] in your config.toml.\n"
-            f"Available purposes: {available_purposes}"
-        )
-        raise ConfigurationError(msg)
+        else:
+            available_purposes = list(self.config.purposes.keys())
+            msg = (
+                f"No LLM configuration found for purpose '{purpose}' and no [llm.default] set.\n"
+                f"Please configure [llm.purposes.{purpose}] or a fallback [llm.default] in your config.toml.\n"
+                f"Available purposes: {available_purposes}"
+            )
+            raise ConfigurationError(msg)
+            
+        # Cache if enabled
+        if self.config.cache_models:
+            self._cache[cache_key] = model
+            
+        return model
 
     def _resolve_override(self, override: str) -> BaseChatModel:
         """

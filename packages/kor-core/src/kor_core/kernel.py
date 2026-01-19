@@ -1,6 +1,7 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 import logging
 import asyncio
+import os
 from .plugin import ServiceRegistry, KorContext
 from .loader import PluginLoader
 from .config import ConfigManager
@@ -44,7 +45,10 @@ class Kernel:
         if config_options:
             pass
 
-        # 2. Setup Services
+        # 2. Apply network configuration (proxy, SSL)
+        self._apply_network_config()
+
+        # 3. Setup Services
         self.registry = ServiceRegistry()
         self.agent_registry = AgentRegistry()
         self.registry.register_service("agents", self.agent_registry)
@@ -63,10 +67,10 @@ class Kernel:
         from .events.telemetry import setup_telemetry
         setup_telemetry(self.hooks)
         
-        # 3. Register Core Tools
+        # 4. Register Core Tools
         self._register_core_tools()
 
-        # 4. Create Context
+        # 5. Create Context
         self.context = KorContext(self.registry, self.config.model_dump())
         self.loader = PluginLoader()
         self._is_initialized = False
@@ -74,6 +78,34 @@ class Kernel:
         
         # Placeholder for selector (initialized in boot)
         self.model_selector = None
+
+    def _apply_network_config(self):
+        """Apply network configuration (proxy, SSL, timeouts) to environment."""
+        net = self.config.network
+        
+        if net.http_proxy:
+            os.environ["HTTP_PROXY"] = net.http_proxy
+            os.environ["http_proxy"] = net.http_proxy
+            logger.info(f"HTTP proxy configured: {net.http_proxy}")
+            
+        if net.https_proxy:
+            os.environ["HTTPS_PROXY"] = net.https_proxy
+            os.environ["https_proxy"] = net.https_proxy
+            logger.info(f"HTTPS proxy configured: {net.https_proxy}")
+            
+        if net.no_proxy:
+            os.environ["NO_PROXY"] = net.no_proxy
+            os.environ["no_proxy"] = net.no_proxy
+            
+        if net.ca_bundle:
+            os.environ["REQUESTS_CA_BUNDLE"] = net.ca_bundle
+            os.environ["SSL_CERT_FILE"] = net.ca_bundle
+            os.environ["CURL_CA_BUNDLE"] = net.ca_bundle
+            logger.info(f"Custom CA bundle: {net.ca_bundle}")
+            
+        if not net.verify_ssl:
+            os.environ["CURL_SSL_VERIFY"] = "0"
+            logger.warning("SSL verification disabled - not recommended for production")
 
     def request_permission(self, action: str, details: Any) -> bool:
         """
@@ -132,6 +164,26 @@ class Kernel:
         plugins_dir = config_dir / "plugins"
         self.loader.load_directory_plugins(plugins_dir)
 
+    def _register_builtin_providers(self):
+        """Register built-in LLM providers (OpenAI, LiteLLM)."""
+        try:
+            from .llm.providers import OpenAIProvider
+            self.llm_registry.register(OpenAIProvider())
+            logger.debug("Registered built-in OpenAI provider")
+        except ImportError:
+            logger.debug("OpenAI provider not available (missing langchain-openai)")
+        except Exception as e:
+            logger.warning(f"Failed to register OpenAI provider: {e}")
+            
+        try:
+            from .llm.providers import LiteLLMProvider
+            self.llm_registry.register(LiteLLMProvider())
+            logger.debug("Registered built-in LiteLLM provider")
+        except ImportError:
+            logger.debug("LiteLLM provider not available (missing langchain-community)")
+        except Exception as e:
+            logger.warning(f"Failed to register LiteLLM provider: {e}")
+
     async def boot(self):
         """
         Starts the kernel lifecycle asynchronously.
@@ -158,6 +210,9 @@ class Kernel:
             description="Standard supervisor with Coder and Researcher",
             entry="kor_core.agent.graph:create_graph"
         ))
+
+        # Register built-in LLM providers
+        self._register_builtin_providers()
 
         self.load_plugins()
         self.loader.load_plugins(self.context)
@@ -244,6 +299,33 @@ class Kernel:
             
         await self.hooks.emit(HookEvent.ON_SHUTDOWN)
         self._is_initialized = False
+
+    async def __aenter__(self) -> "Kernel":
+        """
+        Async context manager entry - boots the kernel.
+        
+        Returns:
+            Kernel: The booted kernel instance.
+        
+        Example:
+            async with Kernel() as kernel:
+                # kernel is ready to use
+                model = kernel.model_selector.get_model()
+        """
+        await self.boot()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """
+        Async context manager exit - shuts down the kernel.
+        
+        Ensures proper cleanup of resources regardless of exceptions.
+        
+        Returns:
+            bool: False to propagate any exceptions.
+        """
+        await self.shutdown()
+        return False
 
 
 # Singleton management using contextvars for async-safe isolation

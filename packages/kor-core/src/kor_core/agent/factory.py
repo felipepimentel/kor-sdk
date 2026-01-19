@@ -1,15 +1,65 @@
-from typing import Callable, Any, Dict
+from typing import Callable, Any, Dict, Optional, TYPE_CHECKING
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
+import logging
 from .state import AgentState
+
+if TYPE_CHECKING:
+    from ..llm.selector import ModelSelector
+    from ..tools.registry import ToolRegistry
+
+logger = logging.getLogger(__name__)
+
 
 class AgentFactory:
     """
     Creates executable agent nodes from configuration definitions.
+    
+    Uses explicit dependency injection for cleaner architecture and testing.
+    
+    Attributes:
+        model_selector (ModelSelector): For resolving LLM models by purpose.
+        tool_registry (ToolRegistry): For resolving tools by name.
     """
     
-    def __init__(self, kernel):
-        self.kernel = kernel
+    def __init__(
+        self, 
+        model_selector: "ModelSelector",
+        tool_registry: Optional["ToolRegistry"] = None
+    ):
+        """
+        Initializes the AgentFactory with explicit dependencies.
+        
+        Args:
+            model_selector (ModelSelector): The model selector for LLM resolution.
+            tool_registry (Optional[ToolRegistry]): The tool registry for tool resolution.
+        """
+        self.model_selector = model_selector
+        self.tool_registry = tool_registry
+    
+    @classmethod
+    def from_kernel(cls, kernel) -> "AgentFactory":
+        """
+        Factory method to create an AgentFactory from a Kernel instance.
+        
+        This maintains backward compatibility while using the new DI pattern.
+        
+        Args:
+            kernel: The Kernel instance.
+            
+        Returns:
+            AgentFactory: A configured factory instance.
+        """
+        tool_registry = None
+        try:
+            tool_registry = kernel.registry.get_tool_registry()
+        except (KeyError, AttributeError):
+            logger.debug("Tool registry not available")
+        
+        return cls(
+            model_selector=kernel.model_selector,
+            tool_registry=tool_registry
+        )
         
     def create_node(self, name: str, definition: Any) -> Callable[[AgentState], Dict[str, Any]]:
         """
@@ -23,34 +73,24 @@ class AgentFactory:
             A function that takes AgentState and returns a state update.
         """
         # Resolve LLM via Selector
-        # Assuming definition has .llm_purpose
         purpose = getattr(definition, "llm_purpose", "default")
-        llm = self.kernel.model_selector.get_model(purpose)
+        llm = self.model_selector.get_model(purpose)
         
         # Resolve Tools via Registry
         tools = []
         tool_names = getattr(definition, "tools", [])
         
-        # We need to access the tool registry service
-        # It might be registered as 'tools' in the service registry
-        try:
-            tool_registry = self.kernel.registry.get_service("tools")
+        if self.tool_registry and tool_names:
             for t_name in tool_names:
-                # Use the registry's factory method to get a fresh instance
-                tool_instance = tool_registry.get_tool(t_name)
+                tool_instance = self.tool_registry.get_tool(t_name)
                 
                 if tool_instance:
                     # Inject registry if needed (like Explorer)
                     if hasattr(tool_instance, "registry"):
-                        # Some tools might depend on the registry itself
-                        tool_instance.registry = tool_registry
+                        tool_instance.registry = self.tool_registry
                     tools.append(tool_instance)
                 else:
-                    # Fallback or Log warning
-                    pass
-        except Exception:
-            # Registry might not be ready or tools service missing
-            pass
+                    logger.warning(f"Tool '{t_name}' not found in registry for agent '{name}'")
             
         # Bind Tools
         if tools:
@@ -72,19 +112,10 @@ class AgentFactory:
             chain = prompt | llm
             response = chain.invoke(state)
             
-            # We must wrap the response in a way that LangGraph expects for state update
-            # Usually strict state schema: {"messages": [response]}
-            
-            # Also, we should tag the message name?
-            # LangChain messages support 'name' field, but ChatModel response is AIMessage.
-            # We can coerce it or wrap it.
-            # But usually AIMessage is enough.
-            # If we want the supervisor to know WHO responded, we might need a custom artifact?
-            # Or just rely on Last Message.
-            
-            # Let's customize the name property if supported by the model/platform
+            # Tag the message with agent name
             response.name = name
             
             return {"messages": [response]}
             
         return agent_node
+

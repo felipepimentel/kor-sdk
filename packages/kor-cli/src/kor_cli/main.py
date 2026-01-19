@@ -13,6 +13,7 @@ from .commands.doctor import doctor
 from .commands.config import config
 from .commands.serve import serve
 from .commands.trace import trace
+from .commands.plugin import plugin
 
 # Configure logging to use Rich
 logging.basicConfig(
@@ -72,7 +73,9 @@ main.add_command(new)
 main.add_command(doctor)
 main.add_command(config)
 main.add_command(serve)
+main.add_command(serve)
 main.add_command(trace)
+main.add_command(plugin)
 
 if __name__ == "__main__":
     main()
