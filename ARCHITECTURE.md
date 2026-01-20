@@ -49,7 +49,8 @@ Makes the codebase easier to navigate and maintain.
 For domains with low complexity (< 5 files), we consolidate classes into a single file to reduce file hopping.
 
 - `plugin.py` contains `PluginLoader`, `PluginManifest`, `KorContext`.
-- `skills.py` contains `SkillRegistry`, `SkillLoader`.
+- `skills.py` contains `SkillRegistry`, `SkillLoader` (inherits `BaseLoader`).
+- `commands.py` contains `CommandRegistry`, `CommandLoader` (inherits `BaseLoader`).
 
 ### Facade Pattern
 
@@ -74,3 +75,17 @@ KOR is designed to be extensible.
 - **Core Plugins**: Loaded automatically from `kor_core`.
 - **User Plugins**: Loaded from `~/.kor/plugins` or valid Python entry points.
 - **Declarative Plugins**: Defined by `plugin.json` + `scripts/`, requiring no Python packaging.
+
+## 5. CLI Architecture
+
+The KOR CLI (`kor-cli`) is designed to be a thin client over the Core.
+
+### Agent Decoupling
+
+The `chat` command does not know about specific agents ("Coder", "Architect"). Instead, it consumes **Events** from the `GraphRunner` and renders them based on their shape:
+
+- **Routing Events**: `{ "next_step": "..." }` → Renders as Supervisor routing.
+- **Message Events**: `{ "messages": [...] }` → Renders as Agent dialogue.
+- **Output Events**: `{ "output": "..." }` → Renders as Tool output.
+
+This adheres to the **Open/Closed Principle**: New agents can be added to the Core without modifying the CLI.

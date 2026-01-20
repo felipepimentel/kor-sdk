@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 import logging
 
-from .utils import parse_frontmatter
+from .utils import parse_frontmatter, BaseLoader
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ class CommandRegistry(SearchableRegistry[Command]):
 # Command Loader
 # =============================================================================
 
-class CommandLoader:
+class CommandLoader(BaseLoader[Command]):
     """
     Loads slash commands from filesystem directories.
     
@@ -153,11 +153,15 @@ class CommandLoader:
         Args:
             registry: Optional CommandRegistry to auto-register loaded commands
         """
+        super().__init__()
         self.registry = registry or CommandRegistry()
+    
+    def get_key(self, item: Command) -> str:
+        return item.name
     
     def load_directory(self, directory: Path) -> List[Command]:
         """
-        Load all .md commands from a directory.
+        Load all .md commands from a directory and register them.
         
         Args:
             directory: Path to the commands directory
@@ -165,22 +169,9 @@ class CommandLoader:
         Returns:
             List of loaded Command objects
         """
-        loaded = []
-        
-        if not directory.exists():
-            logger.debug(f"Commands directory does not exist: {directory}")
-            return loaded
-        
-        for file_path in directory.glob("*.md"):
-            try:
-                command = self.load_file(file_path)
-                if command:
-                    self.registry.register(command)
-                    loaded.append(command)
-                    logger.info(f"Loaded command: /{command.name}")
-            except Exception as e:
-                logger.error(f"Failed to load command from {file_path}: {e}")
-        
+        loaded = super().load_directory(directory)
+        for command in loaded:
+            self.registry.register(command)
         return loaded
     
     def load_file(self, file_path: Path) -> Optional[Command]:

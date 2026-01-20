@@ -38,10 +38,15 @@ uv run pytest tests/
 
 ### W3: CLI Development
 
-The `kor` CLI uses the `Kor` facade.
+The `kor` CLI uses the `Kor` facade and is designed to be **Agent-Agnostic**.
 
 - **Entry**: `packages/kor-cli/src/kor_cli/main.py`
 - **Commands**: `packages/kor-cli/src/kor_cli/commands/`
+- **Architecture**: The `chat` command renders output based on event payload structure (e.g., `messages`, `next_step`), decoupling it from specific agent implementations.
+
+### W4: Implementing Loaders
+
+When creating new resource loaders, inherit from `kor_core.utils.BaseLoader[T]`. This ensures consistent directory scanning and error handling logic.
 
 ## 4. Agent Protocol
 

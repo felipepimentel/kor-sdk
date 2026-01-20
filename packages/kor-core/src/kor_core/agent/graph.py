@@ -3,6 +3,9 @@ from .state import AgentState
 from .nodes import supervisor_node, external_tool_executor_node
 from .factory import AgentFactory
 from ..kernel import get_kernel
+import logging
+
+logger = logging.getLogger(__name__)
 
 def create_graph(checkpointer=None):
     """
@@ -76,6 +79,6 @@ def create_graph(checkpointer=None):
             checkpointer = kernel.registry.get_service("checkpointer")
         except Exception:
             # Fallback or just no persistence
-            pass
+            logger.debug("No checkpointer available - running without persistence")
             
     return workflow.compile(checkpointer=checkpointer)

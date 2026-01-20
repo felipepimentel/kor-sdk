@@ -28,10 +28,25 @@ console = Console()
 # Global hook manager for CLI events
 cli_hooks = HookManager()
 
-@click.group()
-def main():
-    """KOR CLI Entry Point"""
-    pass
+# ASCII Art Banner
+KOR_BANNER = """
+[bold blue]
+██╗  ██╗ ██████╗ ██████╗ 
+██║ ██╔╝██╔═══██╗██╔══██╗
+█████╔╝ ██║   ██║██████╔╝
+██╔═██╗ ██║   ██║██╔══██╗
+██║  ██╗╚██████╔╝██║  ██║
+╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+[/bold blue][dim]The Developer Operating System[/dim]
+"""
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def main(ctx):
+    """KOR CLI - The Developer Operating System"""
+    if ctx.invoked_subcommand is None:
+        console.print(KOR_BANNER)
+        console.print("[dim]Run [bold]kor --help[/bold] for available commands.[/dim]\n")
 
 @main.command()
 def boot():

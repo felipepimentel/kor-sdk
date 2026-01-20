@@ -3,7 +3,7 @@ import logging
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from .registry import LLMRegistry
-from .exceptions import ConfigurationError
+from ..exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     # Avoid circular import, use string forward reference in annotation if needed

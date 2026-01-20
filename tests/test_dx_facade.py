@@ -2,6 +2,14 @@
 import pytest
 import asyncio
 from kor_core.api import Kor
+from kor_core.kernel import reset_kernel
+
+@pytest.fixture(autouse=True)
+def clean_kernel():
+    """Reset kernel singleton before each test."""
+    reset_kernel()
+    yield
+    reset_kernel()
 
 def test_zero_config_init():
     """Test initializing Kor with direct arguments."""

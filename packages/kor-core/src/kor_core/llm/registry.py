@@ -3,7 +3,7 @@ import logging
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from .provider import BaseLLMProvider
-from .exceptions import ConfigurationError, ProviderError
+from ..exceptions import ConfigurationError, LLMError
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class LLMRegistry:
             
         Raises:
             ConfigurationError: If provider not found.
-            ProviderError: If model instantiation fails.
+            LLMError: If model instantiation fails.
         """
         provider = self.get_provider(provider_name)
         if not provider:
@@ -87,7 +87,7 @@ class LLMRegistry:
             logger.debug(f"Instantiating new model: {provider_name}/{model_name}")
             model = provider.get_chat_model(model_name, config)
         except Exception as e:
-            raise ProviderError(f"Failed to instantiate model {model_name} from {provider_name}: {str(e)}") from e
+            raise LLMError(f"Failed to instantiate model {model_name} from {provider_name}: {str(e)}") from e
         
         # 3. Cache
         if self._cache_enabled:

@@ -18,6 +18,14 @@ def chat():
     kor = Kor()
     kor.boot()
 
+    # Themes & Styles
+    STYLE_SUPERVISOR = "bold yellow"
+    STYLE_SUPERVISOR_DONE = "bold green"
+    STYLE_AGENT_TITLE = "bold blue"
+    STYLE_AGENT_BORDER = "blue"
+    STYLE_ERROR = "bold red"
+    STYLE_SYSTEM = "bold purple"
+
     # 2. Setup Permission Handler (HITL)
     def ask_permission(action: str, details: Any) -> bool:
         if action == "terminal_command":
@@ -30,7 +38,7 @@ def chat():
     
     # 3. Setup Persistence & Graph
     active_agent_id = kor.config.agent.active_graph
-    console.print(Panel(f"Starting KOR Agent: [bold]{active_agent_id}[/bold] (Persistent)", style="bold purple"))
+    console.print(Panel(f"Starting KOR Agent: [bold]{active_agent_id}[/bold] (Persistent)", style=STYLE_SYSTEM))
     
     try:
         # Check if we need to manually load a graph or if it's default
@@ -49,7 +57,7 @@ def chat():
              
         # We pass the graph to kor.run via force_graph
     except Exception as e:
-        console.print(f"[bold red]Failed to load agent {active_agent_id}: {e}[/]")
+        console.print(f"[{STYLE_ERROR}]Failed to load agent {active_agent_id}: {e}[/]")
         return
 
     try:
@@ -65,23 +73,34 @@ def chat():
                 # Note: kor.run returns the generator from GraphRunner
                 for event in kor.run(user_input, thread_id="main-session", force_graph=graph):
                     for node, details in event.items():
-                        # Format output based on node type
-                        if node == "Supervisor":
-                            next_step = details.get("next_step", "Unknown")
-                            color = "yellow" if next_step != "FINISH" else "green"
-                            console.print(f"[bold {color}]Supervisor[/]: Routing to -> {next_step}")
+                        # Dynamic rendering based on payload structure, not Node Name
                         
-                        elif node in ["Coder", "Researcher", "Explorer"]:
+                        # Case A: Routing/Supervisor Event
+                        if "next_step" in details:
+                            next_step = details.get("next_step", "Unknown")
+                            color = STYLE_SUPERVISOR if next_step != "FINISH" else STYLE_SUPERVISOR_DONE
+                            console.print(f"[{color}]{node}[/]: Routing to -> {next_step}")
+                        
+                        # Case B: Agent Message Event
+                        elif "messages" in details:
                             messages = details.get("messages", [])
                             for msg in messages:
                                 content = getattr(msg, "content", str(msg))
-                                console.print(Panel(Text(content), title=f"[bold blue]{node}[/]", border_style="blue"))
+                                console.print(Panel(Text(content), title=f"[{STYLE_AGENT_TITLE}]{node}[/]", border_style=STYLE_AGENT_BORDER))
+                        
+                        # Case C: Tool Output or other
+                        elif "output" in details:
+                             console.print(f"[dim]{node} output: {details['output'][:100]}...[/dim]")
+
+                        # Fallback
+                        else:
+                             pass # console.print(f"[dim]Event from {node}[/dim]")
                                 
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                console.print(f"[bold red]Error:[/bold red] {e}")
+                console.print(f"[{STYLE_ERROR}]Error:[/{STYLE_ERROR}] {e}")
 
-        console.print("[bold purple]Goodbye![/]")
+        console.print(f"[{STYLE_SYSTEM}]Goodbye![/]")
     finally:
         kor.shutdown()

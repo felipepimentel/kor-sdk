@@ -103,7 +103,31 @@ class Kor:
                 "model": model_name
             }
 
-        self._kernel = Kernel(config_options=config_options)
+        # Use the singleton kernel pattern
+        from .kernel import get_kernel, set_kernel, reset_kernel, Kernel
+        
+        # Check if a kernel already exists in context
+        existing = None
+        try:
+            from .kernel import _kernel_context
+            existing = _kernel_context.get()
+        except Exception:
+            pass
+            
+        if existing is None:
+            # Create new kernel with config options and register as singleton
+            kernel = Kernel(config_options=config_options)
+            set_kernel(kernel)
+            self._kernel = kernel
+        else:
+            # Reuse existing kernel (warn if config_options were passed)
+            if config_options:
+                import logging
+                logging.getLogger(__name__).debug(
+                    "Kor initialized with existing kernel; config_options ignored"
+                )
+            self._kernel = existing
+            
         self._booted = False
     
     def boot(self) -> "Kor":

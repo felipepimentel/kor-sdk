@@ -1,7 +1,9 @@
 from ...kernel import get_kernel
 from ...tools.terminal import TerminalTool
 from ...tools.browser import BrowserTool
+import logging
 
+logger = logging.getLogger(__name__)
 def get_tool_from_registry(name: str):
     """Attempt to get a tool from the global registry, fallback to defaults."""
     try:
@@ -14,8 +16,8 @@ def get_tool_from_registry(name: str):
                 if hasattr(tool, "registry"):
                     tool.registry = registry
                 return tool
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to load tool '{name}' from registry: {e}")
     
     # Fallbacks for built-in tools if registry is missing
     if name == "terminal":

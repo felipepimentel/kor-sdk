@@ -36,7 +36,10 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
 - **`lsp/`**: Language Server Protocol.
   - *Feature*: Provides Code Intelligence (Hover, Definition) to Agents.
 - **`skills.py`**: Skills System.
-  - *Pattern*: `SkillRegistry` inherits `SearchableRegistry`. Loads markdown skills.
+  - *Pattern*: `SkillLoader` inherits `BaseLoader`. `SkillRegistry` inherits `SearchableRegistry`.
+
+### Plugin System
+
 - **`plugin.py`**: Plugin System.
   - *Consolidated*: Contains `manifest`, `loader`, `context`.
   - *Workflow*: Plugins are loaded by `kernel.py` at boot.
@@ -47,9 +50,9 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
   - *Provides*: `Searchable` protocol, `SearchableRegistry[T]`, `RegexBackend`, `BM25Backend`.
   - *Pattern*: All registries (Tools, Skills, Commands) inherit from `SearchableRegistry`.
 - **`commands.py`**: Slash Commands System.
-  - *Pattern*: `CommandRegistry` extends `SearchableRegistry[Command]`. Loads from markdown.
+  - *Pattern*: `CommandLoader` inherits `BaseLoader`. `CommandRegistry` extends `SearchableRegistry`.
 - **`utils.py`**: Functional helpers.
-  - *Key*: `parse_frontmatter(content)`, `safe_load_yaml(content)`, `BaseLoader[T]`.
+  - *Key*: `BaseLoader[T]` (Standard for generic loading), `parse_frontmatter`, `safe_load_yaml`.
 
 ## 3. Implementation Recipes
 
@@ -94,5 +97,6 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
 - **ADR-002 Facade**: We hid the `Kernel` complexity behind `Kor` to make the library approachable for beginners.
 - **ADR-003 Resources**: We moved prompts/markdown OUT of `src/` to `resources/` to separate code from data.
 - **ADR-004 Single File Modules**: We merged small folders into single `.py` files to reduce "tab fatigue".
+- **ADR-005 CLI Decoupling**: The CLI (`chat`) is Agent-Agnostic. It renders generic events (`messages`, `next_step`) rather than hardcoding agent names.
 
 Use this skill to simulate "Senior Engineer" context when editing the codebase.

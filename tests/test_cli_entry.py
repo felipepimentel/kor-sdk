@@ -6,7 +6,7 @@ def test_cli_entry_point():
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    assert "KOR CLI Entry Point" in result.output
+    assert "KOR CLI" in result.output
     assert "boot" in result.output
     assert "chat" in result.output
 

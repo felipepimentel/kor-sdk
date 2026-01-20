@@ -9,7 +9,7 @@ from typing import List, Optional
 from pathlib import Path
 import logging
 from .search import SearchableRegistry
-from .utils import parse_frontmatter
+from .utils import parse_frontmatter, BaseLoader
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class SkillRegistry(SearchableRegistry[Skill]):
         return "\n".join(lines)
 
 
-class SkillLoader:
+class SkillLoader(BaseLoader[Skill]):
     """
     Loads skills from directories.
     
@@ -68,26 +68,17 @@ class SkillLoader:
     """
     
     def __init__(self, registry: Optional[SkillRegistry] = None):
+        super().__init__()
         self.registry = registry or SkillRegistry()
     
+    def get_key(self, item: Skill) -> str:
+        return item.name
+
     def load_directory(self, directory: Path) -> List[Skill]:
-        """Load all .md skills from a directory."""
-        loaded = []
-        
-        if not directory.exists():
-            logger.debug(f"Skills directory does not exist: {directory}")
-            return loaded
-        
-        for file_path in directory.glob("*.md"):
-            try:
-                skill = self.load_file(file_path)
-                if skill:
-                    self.registry.register(skill)
-                    loaded.append(skill)
-                    logger.info(f"Loaded skill: {skill.name}")
-            except Exception as e:
-                logger.error(f"Failed to load skill from {file_path}: {e}")
-        
+        """Load all .md skills from a directory and register them."""
+        loaded = super().load_directory(directory)
+        for skill in loaded:
+            self.registry.register(skill)
         return loaded
     
     def load_file(self, file_path: Path) -> Optional[Skill]:

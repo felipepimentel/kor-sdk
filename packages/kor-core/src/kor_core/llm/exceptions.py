@@ -8,7 +8,6 @@ Prefer importing from kor_core.exceptions directly.
 from ..exceptions import LLMError, ProviderNotFoundError, ModelNotConfiguredError
 
 # Local aliases for backwards compatibility
-ConfigurationError = ModelNotConfiguredError
-ProviderError = ProviderNotFoundError
+from ..exceptions import LLMError
 
-__all__ = ["LLMError", "ConfigurationError", "ProviderError"]
+__all__ = ["LLMError"]
