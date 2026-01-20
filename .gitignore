@@ -7,3 +7,5 @@
 *test*db*
 *test*report*
 
+.ruff_cache
+.pytest_cache

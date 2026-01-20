@@ -146,6 +146,9 @@ class PluginManifest(BaseModel):
     hooks_path: str = "hooks.json"
     mcp_path: str = ".mcp.json"
     lsp_path: str = ".lsp.json"
+    
+    # Context Platform
+    context_schemes: List[str] = Field(default_factory=list, description="URI schemes handled by this plugin")
 
 
 # =============================================================================

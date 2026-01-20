@@ -52,6 +52,28 @@ class Command:
         """Combined text for search indexing."""
         return f"{self.name} {self.description} {' '.join(self.tags)}"
 
+    @classmethod
+    def from_context_item(cls, item: "ContextItem") -> "Command":
+        """Factory to create a Command from a ContextItem."""
+        from .utils import parse_frontmatter
+        frontmatter, body = parse_frontmatter(item.content)
+        
+        args = frontmatter.get("args", [])
+        tags = frontmatter.get("tags", [])
+        if isinstance(args, str):
+            args = [a.strip() for a in args.split(",")]
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",")]
+
+        return cls(
+            name=frontmatter.get("name", item.id),
+            description=frontmatter.get("description", ""),
+            content=body,
+            args=args,
+            tags=tags,
+            source_path=Path(str(item.metadata.get("path", ""))) if item.metadata.get("path") else None
+        )
+
 
 # =============================================================================
 # Command Registry

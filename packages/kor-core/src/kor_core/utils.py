@@ -116,6 +116,10 @@ class BaseLoader(ABC, Generic[T]):
     """
     Base class for filesystem-based resource loaders.
     
+    .. warning::
+        Deprecated in favor of `kor_core.context` adapters. 
+        Will be removed in v1.0.
+    
     Provides common pattern for loading resources from markdown/yaml files.
     Subclasses only need to implement load_file() and get_key().
     
@@ -138,6 +142,7 @@ class BaseLoader(ABC, Generic[T]):
     
     def __init__(self):
         self._loaded: Dict[str, T] = {}
+        # logger.warning(f"{self.__class__.__name__} is deprecated. Use ContextManager instead.")
     
     @property
     def file_patterns(self) -> List[str]:

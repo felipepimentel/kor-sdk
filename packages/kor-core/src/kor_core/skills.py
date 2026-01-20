@@ -31,6 +31,20 @@ class Skill:
         """Combined text for search indexing."""
         return f"{self.name} {self.description} {' '.join(self.tags)} {self.content[:500]}"
 
+    @classmethod
+    def from_context_item(cls, item: "ContextItem") -> "Skill":
+        """Factory to create a Skill from a ContextItem."""
+        from .utils import parse_frontmatter
+        frontmatter, body = parse_frontmatter(item.content)
+        
+        return cls(
+            name=frontmatter.get("name", item.id),
+            description=frontmatter.get("description", ""),
+            content=body,
+            tags=frontmatter.get("tags", []),
+            source_path=Path(str(item.metadata.get("path", ""))) if item.metadata.get("path") else None
+        )
+
 class SkillRegistry(SearchableRegistry[Skill]):
     """
     Central registry for skills using the unified SearchableRegistry base.

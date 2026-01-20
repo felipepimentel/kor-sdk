@@ -62,6 +62,17 @@ class Kernel:
         self.llm_registry = LLMRegistry()
         self.registry.register_service("llm", self.llm_registry)
         
+        # Context Platform
+        from .context import get_context_manager, LocalContextSource, LocalResolver, ScriptResolver
+        self.context_manager = get_context_manager()
+        self.context_manager.load_config(self.config.context.mapping)
+        # Register standard resolvers
+        self.context_manager.register_resolver("local", LocalResolver())
+        self.context_manager.register_resolver("run", ScriptResolver())
+        # TODO: Register GitResolver once GitContextSource is verified/configured
+        
+        self.registry.register_service("context", self.context_manager)
+        
         # LSP Services
         from .lsp.manager import LSPManager
         self.lsp_manager = LSPManager(self.config.languages)
@@ -162,13 +173,24 @@ class Kernel:
 
     def load_plugins(self):
         """Discovers and loads core and external plugins from entry points and directories."""
+        from pathlib import Path
+        
         # 1. Entry-points discovery
         self.loader.discover_entry_points()
         
-        # 2. Directory-based discovery
+        # 2. Default directory (~/.kor/plugins)
         config_dir = self.config_manager.config_path.parent
         plugins_dir = config_dir / "plugins"
         self.loader.load_directory_plugins(plugins_dir)
+        
+        # 3. Extra paths from config
+        for extra_path in self.config.plugins.extra_paths:
+            path = Path(extra_path).expanduser().resolve()
+            if path.exists():
+                logger.info(f"Loading plugins from extra path: {path}")
+                self.loader.load_directory_plugins(path)
+            else:
+                logger.warning(f"Plugin path does not exist: {path}")
 
     def _register_builtin_providers(self):
         """Register built-in LLM providers."""

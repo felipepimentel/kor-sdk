@@ -103,6 +103,13 @@ class NetworkConfig(BaseConfig):
     connect_timeout: int = 30             # seconds
     read_timeout: int = 120               # seconds
 
+class PluginsConfig(BaseConfig):
+    """Configuration for plugin loading."""
+    extra_paths: List[str] = Field(
+        default_factory=list, 
+        description="Additional directories to load plugins from"
+    )
+
 class MCPServerConfig(BaseConfig):
     """Configuration for an MCP server."""
     command: str
@@ -126,6 +133,11 @@ def default_languages():
         )
     }
 
+class ContextConfig(BaseConfig):
+    """Configuration for the Context Platform."""
+    model_config = {"extra": "allow"} # Allow [context.plugin_name] sections
+    mapping: Dict[str, str] = Field(default_factory=dict)
+
 class KorConfig(BaseConfig):
     user: UserConfig = Field(default_factory=UserConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
@@ -145,7 +157,10 @@ class KorConfig(BaseConfig):
     # Language & Validation
     languages: Dict[str, LanguageConfig] = Field(default_factory=default_languages)
     
-    plugins: Dict[str, Any] = Field(default_factory=dict)
+    # Context Platform
+    context: ContextConfig = Field(default_factory=ContextConfig)
+    
+    plugins: PluginsConfig = Field(default_factory=PluginsConfig)
 
 class ConfigManager:
     """

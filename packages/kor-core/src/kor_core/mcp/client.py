@@ -108,6 +108,31 @@ class MCPClient:
             self.state = ConnectionState.FAILED
             raise ToolError(f"Failed to list MCP tools: {e}")
 
+
+    async def list_resources(self):
+        """Lists resources available through this MCP server."""
+        if self.state != ConnectionState.CONNECTED:
+            await self.connect()
+            
+        try:
+            return await self.session.list_resources()
+        except Exception as e:
+            logger.error(f"MCP list_resources failed: {e}")
+            # Resources might not be supported by all servers, so we don't necessarily fail state
+            # self.state = ConnectionState.FAILED 
+            raise ToolError(f"Failed to list MCP resources: {e}")
+
+    async def read_resource(self, uri: str):
+        """Reads a resource from the MCP server."""
+        if self.state != ConnectionState.CONNECTED:
+            await self.connect()
+            
+        try:
+            return await self.session.read_resource(uri)
+        except Exception as e:
+            logger.error(f"MCP read_resource failed ({uri}): {e}")
+            raise ToolError(f"Failed to read MCP resource '{uri}': {e}")
+
     async def call_tool(self, name: str, arguments: dict):
         """Calls a specific tool on the MCP server."""
         if self.state != ConnectionState.CONNECTED:
