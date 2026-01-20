@@ -26,8 +26,8 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
   - *Key*: It is a Singleton. Access via `get_kernel()` internally if needed, but prefer passing dependencies.
 - **`config.py`**: Pydantic-based configuration.
   - *Pattern*: Start with `ConfigManager().load()`. Supports `~/.kor/config.toml`.
-- **`events.py`**: Unified Event Bus.
-  - *Key*: Replaces old `hooks/` system. Use `HookEvent` enum.
+- **`events.py`**: Unified Event Bus and Telemetry.
+  - *Key*: Use `HookEvent` enum for lifecycle events. Contains `TelemetrySubscriber` and `LoggingTelemetrySink`.
 
 ### Vertical Domains
 
@@ -43,10 +43,13 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
 
 ### Utilities
 
-- **`prompts.py`**: Prompt loading logic.
-  - *Behavior*: Hunts for prompts in `resources/` (repo root) or `~/.kor/prompts`.
+- **`search.py`**: Unified Search Infrastructure.
+  - *Provides*: `Searchable` protocol, `SearchableRegistry[T]`, `RegexBackend`, `BM25Backend`.
+  - *Pattern*: All registries (Tools, Skills, Commands) inherit from `SearchableRegistry`.
+- **`commands.py`**: Slash Commands System.
+  - *Pattern*: `CommandRegistry` extends `SearchableRegistry[Command]`. Loads from markdown.
 - **`utils.py`**: Functional helpers.
-  - *Key*: `parse_frontmatter` (YAML in MD), `BaseLoader[T]` (Generic resource loading).
+  - *Key*: `parse_frontmatter(content)` (single source of truth for YAML frontmatter parsing), `BaseLoader[T]`.
 
 ## 3. Implementation Recipes
 

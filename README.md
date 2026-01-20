@@ -52,8 +52,12 @@ uv run kor doctor
 ```python
 from kor_core import Kor
 
-# Initialize
-kor = Kor()
+# Zero-config initialization (simplest way)
+kor = Kor(api_key="sk-...", model="openai:gpt-4o")
+kor.boot()
+
+# Or with explicit config file
+kor = Kor()  # Uses ~/.kor/config.toml
 kor.boot()
 
 # Use the facade

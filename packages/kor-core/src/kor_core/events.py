@@ -120,6 +120,34 @@ def setup_telemetry(hooks: "HookManager"):
     hooks.register_global_listener(subscriber.on_event)
 
 
+class LoggingTelemetrySink(TelemetrySink):
+    """
+    A simple telemetry sink that logs events via standard Python logging.
+    Useful for debugging or local analytics.
+    
+    Example:
+        hooks = HookManager()
+        hooks.register_telemetry_sink(LoggingTelemetrySink(level=logging.DEBUG))
+    """
+    def __init__(self, level: int = logging.INFO):
+        self.level = level
+
+    def capture(self, event: HookEvent, data: Dict[str, Any]):
+        import json as _json
+        # Filter out heavy objects if necessary
+        safe_data = {
+            k: str(v) for k, v in data.items() 
+            if isinstance(v, (str, int, float, bool, type(None)))
+        }
+        
+        msg = {
+            "event": event.value,
+            "data": safe_data
+        }
+        
+        logger.log(self.level, f"Telemetry: {_json.dumps(msg)}")
+
+
 # =============================================================================
 # Hook Manager
 # =============================================================================
