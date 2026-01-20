@@ -275,7 +275,7 @@ class DeclarativeAction:
     action_type: str
     params: Dict[str, Any] = field(default_factory=dict)
     
-    def execute(self, context: Dict[str, Any]) -> None:
+    async def execute(self, context: Dict[str, Any]) -> None:
         """
         Execute the action with the given context.
         
@@ -310,8 +310,8 @@ class DeclarativeAction:
                 
                 # We reuse the sandbox. run_command usually returns stdout 
                 # or raises exception on failure.
-                # Note: run_command signature is (command: str) -> str
-                output = kernel.sandbox.run_command(cmd)
+                # Note: run_command signature is now async
+                output = await kernel.sandbox.run_command(cmd)
                 logger.debug(f"Hook command output: {output}")
                 
             except Exception as e:
@@ -469,7 +469,7 @@ class HooksLoader:
             
             # Create a callback that executes all actions
             def create_callback(action_list: List[DeclarativeAction]) -> Callable:
-                def callback(*args, **kwargs) -> None:
+                async def callback(*args, **kwargs) -> None:
                     context = dict(kwargs)
                     # Add positional args with generic names
                     for i, arg in enumerate(args):
@@ -477,7 +477,7 @@ class HooksLoader:
                     
                     for action in action_list:
                         try:
-                            action.execute(context)
+                            await action.execute(context)
                         except Exception as e:
                             logger.error(f"Declarative hook action failed: {e}")
                 return callback

@@ -66,7 +66,7 @@ class ScriptResolver(ContextResolverProtocol):
              # Actually run_command in protocol is sync currently in sandbox.py?
              # Let's check sandbox.py... it is 'def run_command'.
              # Docker implementation might want async, but for V1 we used sync subprocess.
-             output = kernel.sandbox.run_command(final_cmd)
+             output = await kernel.sandbox.run_command(final_cmd)
         except Exception as e:
              raise ContextError(f"Script resolution failed in sandbox: {e}")
             

@@ -10,7 +10,7 @@
     "on_agent_start": [
         {
             "command": {
-                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record agent_lifecycle agent_start '{\"agent_id\": \"{agent_id}\"}'",
+                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record agent_lifecycle agent_start '{\"agent_id\": \"{agent_id}\", \"trace_id\": \"{trace_id}\"}'",
                 "timeout": 5
             }
         }
@@ -18,7 +18,15 @@
     "on_agent_end": [
         {
             "command": {
-                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record agent_lifecycle agent_end '{\"agent_id\": \"{agent_id}\"}'",
+                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record agent_lifecycle agent_end '{\"agent_id\": \"{agent_id}\", \"trace_id\": \"{trace_id}\"}'",
+                "timeout": 5
+            }
+        }
+    ],
+    "on_node_start": [
+        {
+            "command": {
+                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record node_lifecycle node_start '{\"node\": \"{node}\", \"trace_id\": \"{trace_id}\", \"parent_id\": \"{parent_id}\"}'",
                 "timeout": 5
             }
         }
@@ -26,7 +34,7 @@
     "on_tool_call": [
         {
             "command": {
-                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record tool_call tool_invoke '{\"tool_name\": \"{tool_name}\"}'",
+                "cmd": "python3 ${KOR_PLUGIN_ROOT}/scripts/collector.py record tool_call tool_invoke '{\"tool_name\": \"{tool_name}\", \"trace_id\": \"{trace_id}\", \"parent_id\": \"{parent_id}\"}'",
                 "timeout": 5
             }
         }

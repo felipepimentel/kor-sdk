@@ -22,12 +22,15 @@ class ReadFileTool(KorTool):
     description: str = "Reads the content of a file."
     args_schema: Type[BaseModel] = ReadFileInput
 
-    def _run(self, path: str) -> str:
+    async def _arun(self, path: str) -> str:
         try:
             from ..kernel import get_kernel
-            return get_kernel().sandbox.read_file(path)
+            return await get_kernel().sandbox.read_file(path)
         except Exception as e:
             return f"Error reading file: {e}"
+
+    def _run(self, path: str) -> str:
+        return "[Sync execution not supported. Use async runner.]"
 
 class WriteFileTool(KorTool):
     name: str = "write_file"
@@ -35,24 +38,28 @@ class WriteFileTool(KorTool):
     args_schema: Type[BaseModel] = WriteFileInput
     requires_confirmation: bool = True
 
-    def _run(self, path: str, content: str) -> str:
+    async def _arun(self, path: str, content: str) -> str:
         try:
             from ..kernel import get_kernel
-            return get_kernel().sandbox.write_file(path, content)
+            return await get_kernel().sandbox.write_file(path, content)
         except Exception as e:
             return f"Error writing file: {e}"
+
+    def _run(self, path: str, content: str) -> str:
+        return "[Sync execution not supported. Use async runner.]"
 
 class ListDirTool(KorTool):
     name: str = "list_dir"
     description: str = "Lists contents of a directory."
     args_schema: Type[BaseModel] = ListDirInput
 
-    def _run(self, path: str = ".") -> str:
+    async def _arun(self, path: str = ".") -> str:
         try:
             from ..kernel import get_kernel
-            items = get_kernel().sandbox.list_dir(path)
-            # Legacy format preservation might be handled by sandbox or here
-            # LocalSandbox returns list of strings including prefix.
+            items = await get_kernel().sandbox.list_dir(path)
             return "\n".join(items) if items else "(empty directory)"
         except Exception as e:
             return f"Error listing directory: {e}"
+
+    def _run(self, path: str = ".") -> str:
+        return "[Sync execution not supported. Use async runner.]"

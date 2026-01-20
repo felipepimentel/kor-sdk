@@ -6,18 +6,27 @@ class GraphRunner:
     def __init__(self, graph=None):
         self.graph = graph or create_graph()
 
-    def run(self, user_input: Union[str, Dict[str, Any]], thread_id: str = "default"):
+    async def run(self, user_input: Union[str, Dict[str, Any]], thread_id: str = "default"):
         """
         Runs the graph with the user input and yields events.
         """
+        import uuid
         from ..kernel import get_kernel
         from ..events import HookEvent
         kernel = get_kernel()
         
-        # Emit Agent Start
-        # If input is complex, we just stringify for the hook
+        # Generate Trace ID for observability
+        trace_id = str(uuid.uuid4())
+        
+        # Emit Agent Start (Async)
         hook_input = user_input if isinstance(user_input, str) else str(user_input)
-        kernel.hooks.emit_sync(HookEvent.ON_AGENT_START, input=hook_input, thread_id=thread_id)
+        await kernel.hooks.emit(
+            HookEvent.ON_AGENT_START, 
+            input=hook_input, 
+            thread_id=thread_id,
+            trace_id=trace_id,
+            agent_id="KOR-Agent"
+        )
 
         if isinstance(user_input, str):
             inputs = {"messages": [HumanMessage(content=user_input)]}
@@ -26,13 +35,24 @@ class GraphRunner:
             
         config = {"configurable": {"thread_id": thread_id}}
         
-        for event in self.graph.stream(inputs, config=config):
+        # stream is sync generator but we can wrap it if needed, 
+        # or use astream if the graph supports it (LangGraph does).
+        async for event in self.graph.astream(inputs, config=config):
             # Emit Node Start for nodes in the event
             for node_name in event.keys():
-                kernel.hooks.emit_sync(HookEvent.ON_NODE_START, node=node_name)
+                await kernel.hooks.emit(
+                    HookEvent.ON_NODE_START, 
+                    node=node_name,
+                    trace_id=trace_id,
+                    parent_id=trace_id # Simplified for V1
+                )
             
             yield event
 
         # Emit Agent End
-        kernel.hooks.emit_sync(HookEvent.ON_AGENT_END, thread_id=thread_id)
+        await kernel.hooks.emit(
+            HookEvent.ON_AGENT_END, 
+            thread_id=thread_id,
+            trace_id=trace_id
+        )
 
