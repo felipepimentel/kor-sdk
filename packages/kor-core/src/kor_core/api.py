@@ -66,13 +66,51 @@ class Kor:
         ```
     """
     
-    def __init__(self, config_options: Optional[dict] = None):
+    def __init__(
+        self, 
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        config_options: Optional[dict] = None
+    ):
         """
         Initialize the Kor facade.
         
         Args:
+            api_key: Optional API key (will be used for the default provider).
+            model: Optional model ID (e.g. "openai:gpt-4o") to set as default.
             config_options: Optional dictionary of configuration overrides.
         """
+        config_options = config_options or {}
+        
+        # Zero-Config: Inject simple args into config options
+        if api_key:
+            # We assume the user wants to set the key for the implied default provider
+            # This is a heuristic: if model is "anthropic:...", set anthropic key, etc.
+            # But for simple "zero config", we'll set it in secrets.openai (often default) 
+            # OR rely on the provider unification logic.
+            # To be safe and generic, we set it in `secrets.openai_api_key` as a fallback common case,
+            # but a more robust way is needed if we want to support any provider.
+            # For now, let's map it to the most likely default based on model name or fallback to openai.
+            
+            target_secret = "secrets.openai_api_key" # Default assumption
+            if model and "claude" in model:
+                target_secret = "secrets.anthropic_api_key"
+            
+            config_options[target_secret] = api_key
+            
+        if model:
+            # parsing "provider:model"
+            if ":" in model:
+                provider, model_name = model.split(":", 1)
+            else:
+                provider = "openai" # default
+                model_name = model
+                
+            config_options["llm.default"] = {
+                "provider": provider,
+                "model": model_name
+            }
+
         self._kernel = Kernel(config_options=config_options)
         self._booted = False
     
@@ -213,6 +251,9 @@ class Kor:
         """
         Run an agent synchronously and collect all events.
         
+        WARNING: Do not use this method if you are already inside an async loop 
+        (like Jupyter or an async web framework). Use `await kor.run(...)` instead.
+        
         Args:
             prompt: The user's request/question
             thread_id: Session ID
@@ -220,6 +261,9 @@ class Kor:
             
         Returns:
             List of all events generated
+            
+        Raises:
+            RuntimeError: If called from an active event loop.
         """
         import asyncio
         events = []
@@ -228,21 +272,39 @@ class Kor:
             async for event in self.run(prompt, thread_id, force_graph):
                 events.append(event)
         
-        asyncio.run(_collect())
-        return events
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+            
+        if loop and loop.is_running():
+            raise RuntimeError(
+                "You are trying to call 'run_sync' from an active async event loop.\n"
+                "In Jupyter/Colab or async functions, use:\n\n"
+                "    async for event in kor.run(prompt):\n"
+                "        print(event)\n"
+                "\nOr if you just want the list:\n"
+                "    events = [e async for e in kor.run(prompt)]"
+            )
+        
+        return asyncio.run(_collect())
     
     def shutdown(self) -> None:
         """Gracefully shutdown the KOR system."""
         import asyncio
+        
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Best effort: schedule it
-                loop.create_task(self._kernel.shutdown())
-            else:
-                loop.run_until_complete(self._kernel.shutdown())
+            loop = asyncio.get_running_loop()
         except RuntimeError:
-             asyncio.run(self._kernel.shutdown())
+            loop = None
+
+        if loop and loop.is_running():
+            # If we are in a loop (e.g. Jupyter), we should schedule the shutdown task
+            # but we can't await it here because this is a sync method.
+            # Best effort: create a task. The user ideally should use an async shutdown if in async context.
+            loop.create_task(self._kernel.shutdown())
+        else:
+            asyncio.run(self._kernel.shutdown())
              
         self._booted = False
     

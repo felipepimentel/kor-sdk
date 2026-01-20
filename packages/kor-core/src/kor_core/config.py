@@ -59,8 +59,8 @@ class LLMConfig(BaseConfig):
     # Cache settings
     cache_models: bool = True 
 
-class AgentDefinition(BaseConfig):
-    """Configuration for a dynamic agent worker."""
+class AgentWorkerConfig(BaseConfig):
+    """Configuration for a dynamic agent worker (used in config.toml)."""
     name: Optional[str] = None  # specific instance name
     role: str = "You are a helpful assistant."
     goal: str = "Assist the user."
@@ -75,7 +75,7 @@ class AgentConfig(BaseConfig):
     supervisor_members: list[str] = ["Architect", "Coder", "Reviewer", "Researcher", "Explorer"]
     
     # Dynamic definitions: name -> definition
-    definitions: Dict[str, AgentDefinition] = Field(default_factory=dict)
+    definitions: Dict[str, AgentWorkerConfig] = Field(default_factory=dict)
 
 class ValidatorConfig(BaseModel):
     command: str

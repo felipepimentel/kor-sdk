@@ -12,50 +12,12 @@ Includes:
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional
 import logging
 
+from .utils import parse_frontmatter
+
 logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Frontmatter Parser (shared utility)
-# =============================================================================
-
-def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
-    """
-    Parse YAML frontmatter from markdown content.
-    
-    Args:
-        content: Raw markdown file content
-        
-    Returns:
-        Tuple of (frontmatter_dict, remaining_content)
-    """
-    frontmatter: Dict[str, Any] = {}
-    body = content
-    
-    if content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            try:
-                import yaml
-                frontmatter = yaml.safe_load(parts[1]) or {}
-            except ImportError:
-                # Fallback to simple parsing if pyyaml not installed
-                for line in parts[1].strip().split("\n"):
-                    if ":" in line:
-                        key, value = line.split(":", 1)
-                        value = value.strip()
-                        # Handle list syntax [item1, item2]
-                        if value.startswith("[") and value.endswith("]"):
-                            value = [v.strip().strip("\"'") for v in value[1:-1].split(",")]
-                        frontmatter[key.strip()] = value
-            except Exception as e:
-                logger.warning(f"Failed to parse YAML frontmatter: {e}")
-            body = parts[2].strip()
-    
-    return frontmatter, body
 
 
 # =============================================================================

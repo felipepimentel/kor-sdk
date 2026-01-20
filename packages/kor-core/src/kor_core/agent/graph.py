@@ -38,8 +38,8 @@ def create_graph(checkpointer=None):
             definition = kernel.config.agent.definitions[member_name]
         else:
             # Create default definition for known agents
-            from ..config import AgentDefinition
-            definition = AgentDefinition(
+            from ..config import AgentWorkerConfig
+            definition = AgentWorkerConfig(
                 name=member_name,
                 role=f"You are the {member_name} agent.",
                 goal=f"Fulfill the {member_name} role.",

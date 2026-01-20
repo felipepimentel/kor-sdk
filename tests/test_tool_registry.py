@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path.cwd() / "plugins/kor-plugin-llm-openai/src"))
 from kor_core.kernel import get_kernel
 from kor_core.tools import KorTool
 from kor_core.agent.factory import AgentFactory
-from kor_core.config import AgentDefinition
+from kor_core.config import AgentWorkerConfig
 
 # Mock Tool
 class DummyTool(KorTool):
@@ -71,7 +71,7 @@ def test_tool_registry():
     factory = AgentFactory(kernel)
     
     # Mock definition requesting dummy_tool
-    definition = AgentDefinition(
+    definition = AgentWorkerConfig(
         name="ToolTester",
         role="Tester",
         goal="Test tools",

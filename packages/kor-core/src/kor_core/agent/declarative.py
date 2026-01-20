@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING
 import logging
 
+from ..utils import parse_frontmatter
+
 if TYPE_CHECKING:
     from .registry import AgentRegistry
     from .models import AgentDefinition
@@ -60,35 +62,7 @@ class DeclarativeAgentDefinition:
         )
 
 
-def parse_agent_frontmatter(content: str) -> tuple[dict, str]:
-    """
-    Parse YAML frontmatter from agent markdown content.
-    
-    Returns (frontmatter_dict, body_content)
-    """
-    frontmatter = {}
-    body = content
-    
-    if content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            try:
-                import yaml
-                frontmatter = yaml.safe_load(parts[1]) or {}
-            except ImportError:
-                # Fallback to simple parsing
-                for line in parts[1].strip().split("\n"):
-                    if ":" in line:
-                        key, value = line.split(":", 1)
-                        value = value.strip()
-                        if value.startswith("[") and value.endswith("]"):
-                            value = [v.strip().strip("\"'") for v in value[1:-1].split(",")]
-                        frontmatter[key.strip()] = value
-            except Exception as e:
-                logger.warning(f"Failed to parse agent frontmatter: {e}")
-            body = parts[2].strip()
-    
-    return frontmatter, body
+
 
 
 class AgentLoader:
@@ -183,7 +157,7 @@ class AgentLoader:
             return self._load_yaml_file(file_path, content)
         
         # Parse markdown with frontmatter
-        frontmatter, body = parse_agent_frontmatter(content)
+        frontmatter, body = parse_frontmatter(content)
         
         # Extract fields from frontmatter
         agent_id = frontmatter.get("id", file_path.stem)

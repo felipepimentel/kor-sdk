@@ -92,11 +92,11 @@ def test_network_config_defaults():
     assert network.read_timeout == 120
 
 
-def test_agent_definition():
-    """Test AgentDefinition schema."""
-    from kor_core.config import AgentDefinition
+def test_agent_worker_config():
+    """Test AgentWorkerConfig schema (formerly AgentDefinition in config)."""
+    from kor_core.config import AgentWorkerConfig
     
-    agent = AgentDefinition(
+    agent = AgentWorkerConfig(
         name="TestAgent",
         role="Test role",
         goal="Test goal",
