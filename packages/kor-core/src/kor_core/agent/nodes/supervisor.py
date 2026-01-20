@@ -6,10 +6,14 @@ from ..state import AgentState
 # Load prompt template once
 system_prompt_template = PromptLoader.load("supervisor") or (
     "You are a supervisor tasked with managing a conversation between the"
-    " following workers: {members}. Given the following user request,"
+    " following workers: {members}.\n\n"
+    "CURRENT PLAN:\n"
+    "{plan}\n\n"
+    "Given the following user request,"
     " respond with the worker to act next. Each worker will perform a"
-    " task and respond with their results and status. When finished,"
-    " respond with FINISH."
+    " task and respond with their results and status. If the plan shows completed tasks,"
+    " focus on the ACTIVE or next PENDING task.\n"
+    "When the whole plan is completely FINISHED (all checked), respond with FINISH."
 )
 
 def supervisor_node(state: AgentState):
@@ -30,6 +34,17 @@ def supervisor_node(state: AgentState):
         llm = kernel.model_selector.get_model("supervisor")
     except Exception:
         llm = None
+        
+    # Format Plan for Context
+    plan_data = state.get("plan", [])
+    plan_str = "No plan yet."
+    if plan_data:
+        plan_lines = []
+        for t in plan_data:
+            status_map = {"pending": "[ ]", "active": "[/]", "completed": "[x]", "failed": "[!]"}
+            symbol = status_map.get(t.get("status", "pending"), "[ ]")
+            plan_lines.append(f"{symbol} {t.get('description', '')}")
+        plan_str = "\n".join(plan_lines)
     
     if not llm:
         # Fallback logic for basic tests if no LLM configured
@@ -71,7 +86,7 @@ def supervisor_node(state: AgentState):
             "Given the conversation above, who should act next?"
             " Or should we FINISH? Select one of: {options}",
         ),
-    ]).partial(options=str(options), members=", ".join(members))
+    ]).partial(options=str(options), members=", ".join(members), plan=plan_str)
 
     schema = {
         "name": "route",
