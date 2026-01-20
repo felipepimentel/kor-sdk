@@ -34,6 +34,8 @@ def init_db():
             session_id TEXT,
             agent_id TEXT,
             tool_name TEXT,
+            trace_id TEXT,
+            parent_id TEXT,
             duration_ms INTEGER,
             success INTEGER,
             metadata TEXT
@@ -65,8 +67,8 @@ def record_event(event_type: str, event_name: str, data: dict = None):
     
     cursor.execute("""
         INSERT INTO events 
-        (timestamp, event_type, event_name, session_id, agent_id, tool_name, duration_ms, success, metadata)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (timestamp, event_type, event_name, session_id, agent_id, tool_name, trace_id, parent_id, duration_ms, success, metadata)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         datetime.now().isoformat(),
         event_type,
@@ -74,6 +76,8 @@ def record_event(event_type: str, event_name: str, data: dict = None):
         data.get("session_id"),
         data.get("agent_id"),
         data.get("tool_name"),
+        data.get("trace_id"),
+        data.get("parent_id"),
         data.get("duration_ms"),
         1 if data.get("success", True) else 0,
         json.dumps(data.get("metadata", {}))

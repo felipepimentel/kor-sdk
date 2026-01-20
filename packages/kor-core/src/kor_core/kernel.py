@@ -29,6 +29,7 @@ class Kernel:
         hooks (HookManager): Event emitter for system lifecycle hooks.
         context (KorContext): Context object shared with plugins.
         loader (PluginLoader): Discovers and loads external plugins.
+        sandbox (SandboxProtocol): Execution environment for agents.
     """
     def __init__(self, config_options: Optional[Dict[str, Any]] = None):
         """
@@ -81,6 +82,12 @@ class Kernel:
         self.hooks = HookManager()
         from .events import setup_telemetry
         setup_telemetry(self.hooks)
+
+        # Sandbox Service
+        from .sandbox import LocalSandbox
+        # TODO: Load from config (Local or Docker)
+        self.sandbox = LocalSandbox()
+        self.registry.register_service("sandbox", self.sandbox)
         
         # 4. Register Core Tools
         self._register_core_tools()
@@ -262,6 +269,10 @@ class Kernel:
         
         # Emit on_boot hook
         await self.hooks.emit(HookEvent.ON_BOOT)
+        
+        # Start Sandbox
+        await self.sandbox.start()
+        
         logger.info("KOR Kernel Ready.")
 
     def boot_sync(self):
@@ -297,6 +308,10 @@ class Kernel:
             await self.lsp_manager.stop_all()
             
         await self.hooks.emit(HookEvent.ON_SHUTDOWN)
+        
+        # Stop Sandbox
+        await self.sandbox.stop()
+        
         self._is_initialized = False
 
     async def __aenter__(self) -> "Kernel":

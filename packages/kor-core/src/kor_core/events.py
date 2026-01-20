@@ -301,26 +301,21 @@ class DeclarativeAction:
             # Substitute ${KOR_PLUGIN_ROOT} with actual plugin root from context
             if "KOR_PLUGIN_ROOT" in context:
                 cmd = cmd.replace("${KOR_PLUGIN_ROOT}", str(context["KOR_PLUGIN_ROOT"]))
+                
             try:
-                result = subprocess.run(
-                    cmd, 
-                    shell=True, 
-                    capture_output=True, 
-                    text=True,
-                    timeout=self.params.get("timeout", 30),
-                    env={
-                        **os.environ, 
-                        "KOR_PLUGIN_ROOT": str(context.get("KOR_PLUGIN_ROOT", ""))
-                    }
-                )
-                if result.returncode != 0:
-                    logger.warning(f"Hook command failed: {result.stderr}")
-                else:
-                    logger.debug(f"Hook command output: {result.stdout}")
-            except subprocess.TimeoutExpired:
-                logger.warning(f"Hook command timed out: {cmd}")
+                # Use Kernel Sandbox for execution!
+                # This ensures we respect security policies (Docker, etc.)
+                from .kernel import get_kernel
+                kernel = get_kernel()
+                
+                # We reuse the sandbox. run_command usually returns stdout 
+                # or raises exception on failure.
+                # Note: run_command signature is (command: str) -> str
+                output = kernel.sandbox.run_command(cmd)
+                logger.debug(f"Hook command output: {output}")
+                
             except Exception as e:
-                logger.error(f"Hook command error: {e}")
+                logger.error(f"Hook command failed: {e}")
                 
         elif self.action_type == "set_context":
             key = self.params.get("key")

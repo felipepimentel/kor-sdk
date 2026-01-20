@@ -1,0 +1,11 @@
+{
+    "name": "kor-plugin-semantic-search",
+    "version": "0.1.0",
+    "description": "Semantic search backend using ChromaDB and Sentence Transformers",
+    "entry_point": "kor_plugin_semantic_search.plugin:SemanticSearchPlugin",
+    "provides": [
+        "semantic-search"
+    ],
+    "dependencies": [],
+    "permissions": []
+}

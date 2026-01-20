@@ -238,6 +238,16 @@ class Kor:
         """Access the service registry for advanced usage."""
         return self._kernel.registry
     
+    @property
+    def sandbox(self):
+        """Access the configured sandbox."""
+        return self._kernel.sandbox
+
+    @property
+    def context(self):
+        """Access the context manager."""
+        return self._kernel.context
+    
     def run(
         self, 
         prompt: str, 

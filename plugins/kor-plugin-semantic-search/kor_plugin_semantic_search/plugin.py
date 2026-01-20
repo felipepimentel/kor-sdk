@@ -19,4 +19,9 @@ class SemanticSearchPlugin(KorPlugin):
         # Register for Skills
         SkillRegistry.register_semantic_backend(ChromaDBBackend)
         
-        logger.info("Registered 'semantic' search backend for Tools and Skills.")
+        # Register as Singleton Vector Store Service
+        # We need to instantiate it specifically for this purpose
+        vector_store = ChromaDBBackend(collection_name="kor_project_memory")
+        context.registry.register_service("vector_store", vector_store)
+        
+        logger.info("Registered 'semantic' search backend and 'vector_store' service.")

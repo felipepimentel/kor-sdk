@@ -41,6 +41,20 @@ class Searchable(Protocol):
 T = TypeVar("T", bound=Searchable)
 
 
+class VectorStoreProtocol(Protocol):
+    """
+    Protocol for vector store interactions.
+    Plugins (like semantic-search) implement this to provide long-term memory.
+    """
+    def add(self, texts: List[str], metadatas: Optional[List[Dict[str, Any]]] = None, ids: Optional[List[str]] = None) -> None:
+        """Add texts to the vector store."""
+        ...
+        
+    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Search for relevant texts."""
+        ...
+
+
 # =============================================================================
 # Search Backends
 # =============================================================================

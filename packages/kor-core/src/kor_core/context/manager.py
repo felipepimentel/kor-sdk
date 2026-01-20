@@ -36,12 +36,14 @@ class ContextManager:
             from .resolvers import LocalResolver, GitResolver, ScriptResolver
             from .skills import SkillResolver
             from .mcp import MCPResolver
+            from .resolvers import MemoryResolver
             
             self.register_resolver("local", LocalResolver())
             self.register_resolver("git", GitResolver())
             self.register_resolver("run", ScriptResolver())
             self.register_resolver("skill", SkillResolver())
             self.register_resolver("mcp", MCPResolver())
+            self.register_resolver("memory", MemoryResolver())
             
             # Auto-detect project context on boot
             self.detect_project_context()

@@ -1,10 +1,10 @@
 import logging
-from typing import List
-from kor_core.search import SearchBackend, T
+from typing import List, Dict, Optional, Any
+from kor_core.search import SearchBackend, T, VectorStoreProtocol
 
 logger = logging.getLogger(__name__)
 
-class ChromaDBBackend(SearchBackend[T]):
+class ChromaDBBackend(SearchBackend[T], VectorStoreProtocol):
     """
     Semantic search backend utilizing ChromaDB and Sentence Transformers.
     """
@@ -79,26 +79,89 @@ class ChromaDBBackend(SearchBackend[T]):
         )
         logger.info(f"Indexed {len(items)} items in ChromaDB.")
 
-    def search(self, query: str, top_k: int = 5) -> List[T]:
-        """
-        Search for items matching the query semantically.
-        """
-        self._ensure_initialized()
-        if not self._items:
-            return []
+        return found_items
 
+    # ==========================
+    # VectorStoreProtocol Impl
+    # ==========================
+    
+    def add(self, texts: List[str], metadatas: Optional[List[Dict[str, Any]]] = None, ids: Optional[List[str]] = None) -> None:
+        self._ensure_initialized()
+        
+        count = len(texts)
+        if not ids:
+             import uuid
+             ids = [str(uuid.uuid4()) for _ in range(count)]
+             
+        if not metadatas:
+             metadatas = [{} for _ in range(count)]
+             
+        self._collection.add(
+            documents=texts,
+            metadatas=metadatas,
+            ids=ids
+        )
+        logger.info(f"Added {count} text items to ChromaDB vector store.")
+
+    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Overloaded search:
+        - If used as SearchBackend, returns List[T] (but strict typing might complain if we mix protocols).
+        - Actually, VectorStoreProtocol.search returns List[Dict]. SearchBackend.search returns List[T].
+        - This is a conflict if we try to be strict. 
+        - Runtime is fine because arguments differ? No, arguments are same (query, top_k).
+        
+        Strategy: Since this class is used as a backend factory mostly, the instances are separate?
+        No, SkillRegistry instantiates one.
+        
+        The plugin uses this class for TWO purposes:
+        1. Registry Backend (Indexing existing python objects)
+        2. General Vector Store (Storing arbitrary text for Context)
+        
+        If we call search() looking for Objects, we rely on self._items.
+        If we call search() looking for Text (VectorStore), we don't have _items.
+        
+        Refactor: We should use a different method name or check if self._items is populated.
+        But SearchBackend defines search(). VectorStoreProtocol defines search().
+        
+        Let's RENAME the VectorStoreProtocol method in the Protocol definition? NO, standard.
+        
+        Let's allow this method to return EITHER based on internal state? 
+        Or better, let's implement VectorStoreProtocol in a SEPARATE class or Adapter.
+        """
+        # FOR NOW: We assume if _items is populated, we are acting as Object Registry Backend.
+        # If _items is empty, we act as pure Vector Store.
+        
+        self._ensure_initialized()
+        
         results = self._collection.query(
             query_texts=[query],
-            n_results=min(top_k, len(self._items))
+            n_results=top_k 
         )
         
-        # Chroma returns list of lists (one per query)
-        found_items = []
+        # Case A: Object Search (SearchBackend)
+        if self._items:
+            found_items = []
+            if results["ids"]:
+                for meta in results["metadatas"][0]:
+                    idx = meta.get("index") # Only registries set 'index'
+                    if idx is not None and 0 <= idx < len(self._items):
+                        found_items.append(self._items[idx])
+            return found_items
+
+        # Case B: Text Search (VectorStoreProtocol)
+        # Flatten results
+        found_dicts = []
         if results["ids"]:
-            # results["metadatas"][0] contains list of dicts like {'index': 0}
-            for meta in results["metadatas"][0]:
-                idx = meta["index"]
-                if 0 <= idx < len(self._items):
-                    found_items.append(self._items[idx])
-                    
-        return found_items
+            ids = results["ids"][0]
+            docs = results["documents"][0]
+            metas = results["metadatas"][0]
+            
+            for i in range(len(ids)):
+                found_dicts.append({
+                    "id": ids[i],
+                    "text": docs[i] if docs else "",
+                    "metadata": metas[i] if metas else {}
+                })
+                
+        return found_dicts
