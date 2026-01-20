@@ -1,15 +1,14 @@
 """
-Exceptions for LLM infrastructure.
+LLM Exceptions (re-exports from main exceptions module)
+
+For backwards compatibility, this module re-exports LLM exceptions.
+Prefer importing from kor_core.exceptions directly.
 """
 
-class LLMError(Exception):
-    """Base exception for all LLM-related errors."""
-    pass
+from ..exceptions import LLMError, ProviderNotFoundError, ModelNotConfiguredError
 
-class ConfigurationError(LLMError):
-    """Raised when LLM configuration is invalid or missing."""
-    pass
+# Local aliases for backwards compatibility
+ConfigurationError = ModelNotConfiguredError
+ProviderError = ProviderNotFoundError
 
-class ProviderError(LLMError):
-    """Raised when an LLM provider fails (API errors, authentication, etc)."""
-    pass
+__all__ = ["LLMError", "ConfigurationError", "ProviderError"]

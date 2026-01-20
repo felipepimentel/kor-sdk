@@ -49,7 +49,7 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
 - **`commands.py`**: Slash Commands System.
   - *Pattern*: `CommandRegistry` extends `SearchableRegistry[Command]`. Loads from markdown.
 - **`utils.py`**: Functional helpers.
-  - *Key*: `parse_frontmatter(content)` (single source of truth for YAML frontmatter parsing), `BaseLoader[T]`.
+  - *Key*: `parse_frontmatter(content)`, `safe_load_yaml(content)`, `BaseLoader[T]`.
 
 ## 3. Implementation Recipes
 

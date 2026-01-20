@@ -55,14 +55,6 @@ def create_graph(checkpointer=None):
         else:
              workflow.add_edge(member_name, "Supervisor")
     
-    # We need to ensure supervisor_node uses the CORRECT list of members in its prompt.
-    # The current supervisor_node in nodes.py has HARDCODED 'members' list.
-    # We need to patching or passing context. 
-    # To avoid changing nodes.py signature (AgentState -> Dict), 
-    # we can assume supervisor_node reads from config/global state if we refactored it.
-    # BUT we didn't refactor supervisor_node yet to read dynamic members.
-    # We should probably do that next.
-    
     # ExternalToolExecutor uses conditional routing (FINISH or Supervisor)
     workflow.add_conditional_edges(
         "ExternalToolExecutor",

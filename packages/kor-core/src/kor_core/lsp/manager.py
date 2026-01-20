@@ -19,18 +19,10 @@ class LSPManager:
             return None
             
         config = self.languages[lang_name]
-        # Check if LSP is configured for this language
-        # (Assuming we add an 'lsp' field to LanguageConfig later, 
-        # for now we might reuse validator config or expect a specific lsp config)
-        # Let's assume LanguageConfig has an 'lsp' field or we check generic 'lsp' command.
         
-        # NOTE: Config schema update required for 'lsp' specific config?
-        # Re-using ValidatorConfig for now as placeholder if 'lsp' field missing?
-        # Let's check if 'lsp' attribute exists dynamically or use a convention.
-        
+        # Check if LSP is configured for this language via 'lsp' attribute
         lsp_config = getattr(config, "lsp", None)
         if not lsp_config:
-            # Fallback: maybe the validator IS the LSP (like pyright-langserver)?
             return None
 
         if lang_name in self._clients:

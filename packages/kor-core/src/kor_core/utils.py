@@ -74,6 +74,40 @@ def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
     return frontmatter, body
 
 
+def safe_load_yaml(content: str) -> Dict[str, Any]:
+    """
+    Safely load YAML content with fallback for missing PyYAML.
+    
+    This centralizes YAML parsing across the SDK, providing a consistent
+    fallback mechanism when PyYAML is not installed.
+    
+    Args:
+        content: YAML string to parse
+        
+    Returns:
+        Parsed dictionary (empty dict on failure)
+    """
+    try:
+        import yaml
+        return yaml.safe_load(content) or {}
+    except ImportError:
+        logger.debug("PyYAML not installed, using basic parsing")
+        # Basic key: value parsing fallback
+        result: Dict[str, Any] = {}
+        for line in content.strip().split("\n"):
+            if ":" in line and not line.strip().startswith("#"):
+                key, value = line.split(":", 1)
+                value = value.strip()
+                # Handle list syntax [item1, item2]
+                if value.startswith("[") and value.endswith("]"):
+                    value = [v.strip().strip("\"'") for v in value[1:-1].split(",")]
+                result[key.strip()] = value
+        return result
+    except Exception as e:
+        logger.warning(f"Failed to parse YAML: {e}")
+        return {}
+
+
 # =============================================================================
 # Base Loader (Generic)
 # =============================================================================
@@ -181,4 +215,4 @@ class BaseLoader(ABC, Generic[T]):
         return key in self._loaded
 
 
-__all__ = ["parse_frontmatter", "BaseLoader"]
+__all__ = ["parse_frontmatter", "safe_load_yaml", "BaseLoader"]

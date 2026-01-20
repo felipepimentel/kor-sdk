@@ -82,17 +82,9 @@ class Kor:
         """
         config_options = config_options or {}
         
-        # Zero-Config: Inject simple args into config options
+        # Zero-Config: Inject api_key into correct secret based on model prefix
         if api_key:
-            # We assume the user wants to set the key for the implied default provider
-            # This is a heuristic: if model is "anthropic:...", set anthropic key, etc.
-            # But for simple "zero config", we'll set it in secrets.openai (often default) 
-            # OR rely on the provider unification logic.
-            # To be safe and generic, we set it in `secrets.openai_api_key` as a fallback common case,
-            # but a more robust way is needed if we want to support any provider.
-            # For now, let's map it to the most likely default based on model name or fallback to openai.
-            
-            target_secret = "secrets.openai_api_key" # Default assumption
+            target_secret = "secrets.openai_api_key"
             if model and "claude" in model:
                 target_secret = "secrets.anthropic_api_key"
             

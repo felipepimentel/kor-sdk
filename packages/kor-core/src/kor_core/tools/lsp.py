@@ -39,13 +39,8 @@ class LSPHoverTool(KorTool):
         if not manager:
             return "LSP Service not available."
             
-        # 1. Detect Language / Get Client
-        # We need to map file extension to language config name?
-        # LSPManager currently takes language name.
-        # Ideally Registry or Manager logic resolves name from path.
-        # Let's fix Manager to resolve extension -> client first.
-        
-        # HACK: Iterate languages in manager to find match
+
+        # Find client by file extension
         client = None
         for lang, config in manager.languages.items():
             ext = "." + file_path.split(".")[-1]
@@ -56,13 +51,7 @@ class LSPHoverTool(KorTool):
         if not client:
             return f"No LSP client configured for file: {file_path}"
             
-        # 2. Send Request
-        # Note: LSP uses 0-based indexing
-        # Note: We need to open the document first if not open?
-        # Ideally we send textDocument/didOpen first. 
-        # But for stateless tool use, we can try relying on server reading from disk (most do).
-        # Or we explicitly open it.
-        
+        # LSP uses 0-based indexing; open document to ensure server awareness
         uri = f"file://{file_path}"
         
         # Send didOpen to ensure server knows about it (Stateless safety)
