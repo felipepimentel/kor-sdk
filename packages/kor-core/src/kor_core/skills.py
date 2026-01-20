@@ -81,8 +81,19 @@ class SkillLoader(BaseLoader[Skill]):
     ```
     """
     
+    @property
+    def file_patterns(self) -> List[str]:
+        """File patterns to search for (default: *.md)."""
+        return ["*.md", "SKILL.md"]
+
     def __init__(self, registry: Optional[SkillRegistry] = None):
         super().__init__()
+        import warnings
+        warnings.warn(
+            "SkillLoader is deprecated and will be removed in v1.0. Use ContextManager with 'skill://' URI or SearchContextTool/GetContextTool instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.registry = registry or SkillRegistry()
     
     def get_key(self, item: Skill) -> str:
@@ -90,9 +101,24 @@ class SkillLoader(BaseLoader[Skill]):
 
     def load_directory(self, directory: Path) -> List[Skill]:
         """Load all .md skills from a directory and register them."""
-        loaded = super().load_directory(directory)
-        for skill in loaded:
-            self.registry.register(skill)
+        # Using rglob to support subdirectories (Standard format uses folders)
+        loaded = []
+        if not directory.exists():
+            return loaded
+
+        # Walk manually to support both formats
+        for file_path in directory.rglob("*.md"):
+             if file_path.name == "SKILL.md":
+                 # Standard format: directory name is skill name
+                 pass
+             try:
+                skill = self.load_file(file_path)
+                if skill:
+                    self.registry.register(skill)
+                    loaded.append(skill)
+             except Exception as e:
+                logger.error(f"Failed to load skill {file_path}: {e}")
+                
         return loaded
     
     def load_file(self, file_path: Path) -> Optional[Skill]:
@@ -116,6 +142,17 @@ class SkillLoader(BaseLoader[Skill]):
         )
     
     def load_from_config_dir(self) -> List[Skill]:
-        """Load skills from ~/.kor/skills/"""
+        """Load skills from ~/.kor/skills/ AND .agent/skills/"""
+        loaded = []
+        
+        # 1. Global
         skills_dir = Path.home() / ".kor" / "skills"
-        return self.load_directory(skills_dir)
+        loaded.extend(self.load_directory(skills_dir))
+        
+        # 2. Project Standard
+        # We try to detect the project root or assume CWD
+        project_skills = Path.cwd() / ".agent" / "skills"
+        if project_skills.exists():
+             loaded.extend(self.load_directory(project_skills))
+             
+        return loaded

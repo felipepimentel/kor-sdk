@@ -142,7 +142,12 @@ class BaseLoader(ABC, Generic[T]):
     
     def __init__(self):
         self._loaded: Dict[str, T] = {}
-        # logger.warning(f"{self.__class__.__name__} is deprecated. Use ContextManager instead.")
+        # import warnings
+        # warnings.warn(
+        #     f"{self.__class__.__name__} is deprecated. Use ContextManager instead.",
+        #     DeprecationWarning,
+        #     stacklevel=2
+        # )
     
     @property
     def file_patterns(self) -> List[str]:

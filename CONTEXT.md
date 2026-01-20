@@ -73,6 +73,18 @@ async def main():
     context = await cm.resolve("project:agent")
 ```
 
+## Agent Tools
+
+KOR provides standard tools for agents to interact with the Context Platform.
+
+### `GetContextTool`
+
+Allows agents to fetch context by URI.
+
+- **Name**: `get_context`
+- **Input**: `uri` (e.g., `skill://git`, `project:rules`), `query` (optional)
+- **Output**: Content of the resolved context.
+
 ## Extending
 
 Create a plugin that registers a resolver:

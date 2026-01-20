@@ -170,6 +170,9 @@ class Kernel:
         registry.register(LSPHoverTool(), tags=["lsp", "code", "hover", "docs"])
         registry.register(LSPDefinitionTool(), tags=["lsp", "code", "definition", "navigation"])
         registry.register(ManagePlanTool(), tags=["planning", "task", "management", "organize"])
+        
+        from .tools.context import GetContextTool
+        registry.register(GetContextTool(), tags=["context", "read", "fetch", "skills", "knowledge"])
 
     def load_plugins(self):
         """Discovers and loads core and external plugins from entry points and directories."""
