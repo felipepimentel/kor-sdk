@@ -48,7 +48,7 @@ You are working on the **KOR SDK**, an Enterprise Developer Platform built on a 
 
 - **`search.py`**: Unified Search Infrastructure.
   - *Provides*: `Searchable` protocol, `SearchableRegistry[T]`, `RegexBackend`, `BM25Backend`.
-  - *Pattern*: All registries (Tools, Skills, Commands) inherit from `SearchableRegistry`.
+  - *Pattern*: All registries (Tools, Skills, Commands, Agents) inherit from `SearchableRegistry`.
 - **`commands.py`**: Slash Commands System.
   - *Pattern*: `CommandLoader` inherits `BaseLoader`. `CommandRegistry` extends `SearchableRegistry`.
 - **`utils.py`**: Functional helpers.
