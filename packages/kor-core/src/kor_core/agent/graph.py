@@ -45,11 +45,17 @@ def create_graph(checkpointer=None):
         else:
             # Create default definition for known agents
             from ..config import AgentWorkerConfig
+            
+            # Default tools based on role
+            tools = []
+            if member_name == "Architect":
+                tools.append("manage_plan")
+                
             definition = AgentWorkerConfig(
                 name=member_name,
                 role=f"You are the {member_name} agent.",
                 goal=f"Fulfill the {member_name} role.",
-                tools=[]
+                tools=tools
             )
             
         node_func = factory.create_node(member_name, definition)

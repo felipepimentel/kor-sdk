@@ -143,6 +143,7 @@ class Kernel:
         """Register built-in tools and services like Terminal, Browser, and File tools."""
         from .tools import ToolRegistry, TerminalTool, BrowserTool, create_search_tool, ReadFileTool, WriteFileTool, ListDirTool
         from .tools.lsp import LSPHoverTool, LSPDefinitionTool
+        from .tools.planning import ManagePlanTool
         
         # Initialize Registry service
         registry = ToolRegistry(backend="bm25")
@@ -157,6 +158,7 @@ class Kernel:
         registry.register(create_search_tool(registry), tags=["discovery", "find", "tools", "help"])
         registry.register(LSPHoverTool(), tags=["lsp", "code", "hover", "docs"])
         registry.register(LSPDefinitionTool(), tags=["lsp", "code", "definition", "navigation"])
+        registry.register(ManagePlanTool(), tags=["planning", "task", "management", "organize"])
 
     def load_plugins(self):
         """Discovers and loads core and external plugins from entry points and directories."""
