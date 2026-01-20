@@ -32,5 +32,7 @@ class PlanTask(TypedDict):
     description: str  # What needs to be done
     status: str  # pending, active, completed, failed
     result: Optional[str]  # Summary of what was accomplished
+    parent_id: Optional[str]  # ID of parent task (for subtasks)
+    depth: int  # Nesting level (0 = root, 1 = subtask, etc.)
 
 

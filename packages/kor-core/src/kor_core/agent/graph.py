@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from .nodes import supervisor_node, external_tool_executor_node, ensure_plan_node
+from .nodes import supervisor_node, external_tool_executor_node, ensure_plan_node, auto_planner_node
 from .factory import AgentFactory
 from ..kernel import get_kernel
 import logging
@@ -20,7 +20,10 @@ def create_graph(checkpointer=None):
     factory = AgentFactory.from_kernel(kernel)
     workflow = StateGraph(AgentState)
     
-    # 0. Add Planning Node (Entry Point)
+    # 0. Add Auto Planner Node (Generates plan if missing)
+    workflow.add_node("AutoPlanner", auto_planner_node)
+    
+    # 0.5 Add Planning Node (Syncs with PLAN.md)
     workflow.add_node("EnsurePlan", ensure_plan_node)
     
     # 1. Add Supervisor (Always present)
@@ -82,8 +85,9 @@ def create_graph(checkpointer=None):
 
 
 
-    # Start with Planning
-    workflow.set_entry_point("EnsurePlan")
+    # Start with Auto Planning
+    workflow.set_entry_point("AutoPlanner")
+    workflow.add_edge("AutoPlanner", "EnsurePlan")
     workflow.add_edge("EnsurePlan", "Supervisor")
     
     # Use kernel checkpointer if not provided

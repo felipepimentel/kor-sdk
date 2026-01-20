@@ -5,6 +5,7 @@ from .reviewer import reviewer_node
 from .base import get_tool_from_registry
 from .external_tool_executor import external_tool_executor_node
 from .planner import ensure_plan_node
+from .auto_planner import auto_planner_node
 
 __all__ = [
     "supervisor_node",
@@ -13,6 +14,7 @@ __all__ = [
     "reviewer_node",
     "get_tool_from_registry",
     "external_tool_executor_node",
-    "ensure_plan_node"
+    "ensure_plan_node",
+    "auto_planner_node"
 ]
 

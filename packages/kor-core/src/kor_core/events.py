@@ -65,6 +65,12 @@ class HookEvent(str, Enum):
     ON_PERMISSION_REQUEST = "on_permission_request"
     ON_PERMISSION_GRANTED = "on_permission_granted"
     ON_PERMISSION_DENIED = "on_permission_denied"
+    
+    # Planning hooks (Phase 3)
+    PLAN_UPDATED = "plan_updated"
+    TASK_STARTED = "task_started"
+    TASK_COMPLETED = "task_completed"
+    PLAN_FINISHED = "plan_finished"  # All tasks complete
 
 
 # =============================================================================

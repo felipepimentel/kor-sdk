@@ -7,10 +7,22 @@ This module provides the "Brain" for Native Planning, allowing agents to:
 3. Track progress and self-correct.
 """
 import re
-from typing import List, Optional, Dict, Literal
+from typing import List, Optional, Dict, Literal, Tuple
 from pathlib import Path
 from dataclasses import dataclass, field
 from .state import PlanTask
+
+# Lazy import to avoid circular dependency
+def _emit_event(event, **kwargs):
+    """Helper to emit events via kernel hooks (safe import)."""
+    try:
+        from ..kernel import get_kernel
+        from ..events import HookEvent
+        kernel = get_kernel()
+        if kernel and kernel._is_initialized:
+            kernel.hooks.emit_sync(event, **kwargs)
+    except Exception:
+        pass  # Silent fail if hooks not available
 
 # Regular expressions for parsing markdown checklists
 TASK_REGEX = re.compile(r'^\s*-\s*\[([ x/])\]\s*(.*)$')
@@ -49,7 +61,7 @@ class Planner:
             self._write_to_file()
 
     def _read_from_file(self) -> None:
-        """Parses a markdown checklist into PlanTasks."""
+        """Parses a markdown checklist into PlanTasks with hierarchy support."""
         if not self.file_path:
             return
             
@@ -57,10 +69,15 @@ class Planner:
         lines = content.splitlines()
         
         new_tasks: List[PlanTask] = []
+        id_counter = 0
+        parent_stack: List[tuple] = []  # Stack of (depth, task_id)
         
-        # Simple parser for now - assumes flat list or simple indentation
-        # Structure: "- [Status] Description"
-        for i, line in enumerate(lines):
+        for line in lines:
+            # Calculate indentation depth (each 2 spaces or 1 tab = 1 level)
+            stripped = line.lstrip()
+            indent = len(line) - len(stripped)
+            depth = indent // 2  # Assuming 2-space indentation
+            
             match = TASK_REGEX.match(line)
             if match:
                 status_char = match.group(1)
@@ -72,15 +89,29 @@ class Planner:
                 elif status_char == "/":
                     status = "active"
                 
-                # Generate a simple ID based on index if one isn't explicit
-                # Future: Support parsing "ID. Description"
-                task_id = str(len(new_tasks) + 1)
+                id_counter += 1
+                task_id = str(id_counter)
+                
+                # Determine parent based on depth
+                parent_id = None
+                
+                # Pop from stack until we find a parent at lower depth
+                while parent_stack and parent_stack[-1][0] >= depth:
+                    parent_stack.pop()
+                
+                if parent_stack:
+                    parent_id = parent_stack[-1][1]
+                
+                # Push current task to stack as potential parent
+                parent_stack.append((depth, task_id))
                 
                 new_tasks.append({
                     "id": task_id,
                     "description": description,
                     "status": status,
-                    "result": None 
+                    "result": None,
+                    "parent_id": parent_id,
+                    "depth": depth
                 })
         
         self.tasks = new_tasks
@@ -93,7 +124,7 @@ class Planner:
         # For now, let's stick to explicit active status.
 
     def _write_to_file(self) -> None:
-        """Writes PlanTasks to a markdown checklist."""
+        """Writes PlanTasks to a markdown checklist with hierarchy support."""
         if not self.file_path or not self.tasks:
             return
 
@@ -105,27 +136,48 @@ class Planner:
                 symbol = "x"
             elif task["status"] == "active":
                 symbol = "/"
-                
-            lines.append(f"- [{symbol}] {task['description']}")
+            
+            # Add indentation based on depth
+            depth = task.get("depth", 0)
+            indent = "  " * depth
+            lines.append(f"{indent}- [{symbol}] {task['description']}")
             
         self.file_path.write_text("\n".join(lines), encoding="utf-8")
 
-    def add_task(self, description: str) -> None:
+    def add_task(self, description: str, parent_id: Optional[str] = None) -> None:
         """Adds a new pending task to the end of the plan."""
+        from ..events import HookEvent
+        
         new_id = str(len(self.tasks) + 1)
+        
+        # Calculate depth from parent
+        depth = 0
+        if parent_id:
+            parent = next((t for t in self.tasks if t["id"] == parent_id), None)
+            if parent:
+                depth = parent.get("depth", 0) + 1
+        
         self.tasks.append({
             "id": new_id,
             "description": description,
             "status": "pending",
-            "result": None
+            "result": None,
+            "parent_id": parent_id,
+            "depth": depth
         })
         if self.file_path:
             self._write_to_file()
+        
+        # Emit event
+        _emit_event(HookEvent.PLAN_UPDATED, task_id=new_id, action="added", description=description)
 
     def update_task_status(self, task_id: str, status: str, result: Optional[str] = None) -> None:
         """Updates a task's status and persists."""
+        from ..events import HookEvent
+        
         target = next((t for t in self.tasks if t["id"] == task_id), None)
         if target:
+            old_status = target["status"]
             target["status"] = status
             if result:
                 target["result"] = result
@@ -133,11 +185,33 @@ class Planner:
             # Handle exclusivity of 'active' status if needed
             if status == "active":
                 self.current_task_id = task_id
-                # Optionally demote other active tasks?
-                # For now let's allow multiple active but usually there is one focus.
                 
             if self.file_path:
                 self._write_to_file()
+            
+            # Emit appropriate event
+            if status == "active" and old_status != "active":
+                _emit_event(HookEvent.TASK_STARTED, task_id=task_id, description=target["description"])
+            elif status == "completed":
+                _emit_event(HookEvent.TASK_COMPLETED, task_id=task_id, description=target["description"], result=result)
+                
+                # Check if entire plan is now complete
+                if self.is_complete():
+                    _emit_event(HookEvent.PLAN_FINISHED, tasks=self.tasks)
+            else:
+                _emit_event(HookEvent.PLAN_UPDATED, task_id=task_id, action="status_changed", new_status=status)
+
+    def get_progress(self) -> Tuple[int, int]:
+        """Returns (completed_count, total_count) for progress tracking."""
+        total = len(self.tasks)
+        completed = sum(1 for t in self.tasks if t["status"] == "completed")
+        return (completed, total)
+
+    def is_complete(self) -> bool:
+        """Returns True if all tasks are completed."""
+        if not self.tasks:
+            return False
+        return all(t["status"] == "completed" for t in self.tasks)
 
     def get_next_step(self) -> Optional[PlanTask]:
         """Determines the next thing to work on."""
@@ -153,3 +227,4 @@ class Planner:
                  return task
                  
         return None
+
