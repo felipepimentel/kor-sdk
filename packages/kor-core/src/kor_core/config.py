@@ -201,6 +201,10 @@ class ConfigManager:
             # Default to Mock if no LLM configured
             logger.info("No LLM configuration found. Defaulting to Mock Provider.")
             self._config.llm.default = ModelRef(provider="mock", model="mock-gpt")
+            
+            # Ensure the provider config exists so Selector doesn't fail
+            if "mock" not in self._config.llm.providers:
+                self._config.llm.providers["mock"] = ProviderConfig(extra={"response": "Mock AI: Ready."})
 
 
     def _interpolate_env_vars(self, data: Any) -> Any:

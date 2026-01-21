@@ -205,9 +205,11 @@ class Kernel:
     def _register_builtin_providers(self):
         """Register built-in LLM providers."""
         try:
-            from .llm import UnifiedProvider
+            from .llm import UnifiedProvider, MockProvider
             # Register generic 'unified' provider
             self.llm_registry.register(UnifiedProvider(name="unified"))
+            # Register 'mock' provider
+            self.llm_registry.register(MockProvider(name="mock"))
 
             
             logger.debug("Registered built-in LLM providers (unified, openai, litellm)")

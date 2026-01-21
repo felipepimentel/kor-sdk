@@ -20,8 +20,8 @@ class LLMRegistry:
         self._cache_enabled = True
         
         # Register default internal providers
-        from .provider import MockProvider
-        self.register(MockProvider())
+        # Note: MockProvider is now registered by Kernel during boot to ensure visibility
+        pass
 
     def register(self, provider: BaseLLMProvider) -> None:
         """Registers a new LLM provider."""
