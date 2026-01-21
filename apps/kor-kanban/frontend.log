@@ -1,0 +1,13 @@
+
+> kor-kanban@0.0.158 dev
+> vite
+
+[sentry-vite-plugin] Info: Sending telemetry data on issues and performance to Sentry. To disable telemetry, set `options.telemetry` to `false`.
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+
+  VITE v5.4.21  ready in 741 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
