@@ -1,55 +1,45 @@
 # KOR SDK Context & Guide
 
-> **Primary Reference**:
->
-> - **Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md) (Read this for the source of truth on directory structure and design).
-> - **Deep Context**: If you are an Antigravity agent, use the `kor_context` skill (`.agent/skills/kor_context/SKILL.md`) for deep understanding.
+> **Hello Agent!** 👋
+> You are working on the **KOR SDK**, an advanced AI agent framework.
+> This file is your primary orientation guide.
 
-## 1. Project Overview
+## 1. Golden Rules
 
-**KOR SDK** is a modular, plugin-first Python framework for building advanced AI agents.
+1. **Respect Vertical Boundaries**: The code is organized into "Verticals" (e.g., `mcp/`, `lsp/`). Do not cross-import unless necessary.
+2. **Use the Facade**: Always use `kor_core.Kor()` to interact with the system. Avoid internal APIs.
+3. **Read Before Writing**: Use `grep_search` to find existing utilities. We have a unified `events.py`, `search.py`, and `config.py`. Do not reinvent them.
+4. **Test Your Work**: Run `pytest` before declaring a task complete.
 
-- **Core Philosophy**: "Vertical Architecture" + "Pythonic Facade".
-- **Stack**: Python 3.12+ (`uv`), LangGraph, Pydantic.
+## 2. Architecture Quick Reference
 
-## 2. Quick Constraints & Rules
+* **Facade**: `packages/kor-core/src/kor_core/api.py` -> `class Kor`
+* **Config**: `packages/kor-core/src/kor_core/config.py` -> `class KorConfig`
+* **Kernel**: `packages/kor-core/src/kor_core/kernel.py`
+* **Events**: `packages/kor-core/src/kor_core/events.py`
 
-1. **Vertical Domain**: Respect the vertical boundaries (`mcp/`, `lsp/`, `skills/`). Do not cross-import unless necessary via public APIs.
-2. **Facade Pattern**: Always use `kor_core.Kor()` to access the system. Do not import internal managers (`Kernel`, `HookManager`) directly in consumer code.
-3. **Consolidated Modules**: If a module has < 5 files, prefer a single file (e.g., `events.py` instead of `events/__init__.py`).
-4. **Resources**: Place non-code assets (prompts, schemas) in `resources/` at the repo root.
+## 3. How to Gain Context
 
-## 3. Common Workflows
+If you are asked to implement a feature, **load the relevant skill** first using `view_file`.
 
-### W1: Adding a Capability
+* **Understanding the Whole**: `.agent/skills/kor_context/SKILL.md` (Crucial architecture context)
+* **Kanban App Integration**: `.agent/skills/kanban_dev/SKILL.md`
 
-Create a **Plugin**.
+## 4. Common Tasks
 
-- **Declarative**: `plugin.json` + `scripts/` (Preferred for simple tools).
-- **Python**: `kor_core/plugin.py` subclass (For deep integration).
+### A. Creating a Plugin
 
-### W2: Running Tests
+Check `packages/kor-cli/src/kor_cli/commands/new.py` for the standard template.
+Plugins should ideally be **Declarative** (`plugin.json` + `scripts/`) unless they need deep Python hooks.
 
-```bash
-uv run pytest tests/
-```
+### B. Adding a Tool
 
-(Maintain 100% pass rate. No regressions.)
+Tools are just Python functions wrapped with `@tool`.
+They should be registered in the `ToolRegistry` via the `Kor` facade.
 
-### W3: CLI Development
+### C. Debugging
 
-The `kor` CLI uses the `Kor` facade and is designed to be **Agent-Agnostic**.
+Use `kor doctor` to check the environment.
+Use `kor dev` (if available) to run the development loop.
 
-- **Entry**: `packages/kor-cli/src/kor_cli/main.py`
-- **Commands**: `packages/kor-cli/src/kor_cli/commands/`
-- **Architecture**: The `chat` command renders output based on event payload structure (e.g., `messages`, `next_step`), decoupling it from specific agent implementations.
-
-### W4: Implementing Loaders
-
-When creating new resource loaders, inherit from `kor_core.utils.BaseLoader[T]`. This ensures consistent directory scanning and error handling logic.
-
-## 4. Agent Protocol
-
-1. **Search First**: Use `grep_search` or `find_by_name` to locate specific implementations.
-2. **Read Context**: Use the `kor_context` skill to align with architectural decisions.
-3. **Validate**: Always run `kor doctor` and `pytest` before declaring a task complete.
+Good luck! 🚀

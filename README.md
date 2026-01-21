@@ -1,106 +1,116 @@
 # KOR — The Developer Operating System
 
-> An extensible AI agent framework with a modular plugin architecture, inspired by Claude Code.
-> **Status: Production Ready (v1.0)** 🚀
-
-## ✨ Features
-
-- **LangGraph Agent**: Supervisor-Worker pattern for task orchestration.
-- **Optimized Kernel**: Asynchronous, lazy-loading singleton architecture.
-- **Plugin System**: Manifest-based (`plugin.json`) with robust isolation.
-- **Hooks**: Event-driven architecture (`on_boot`, `pre_command`) with telemetry.
-- **MCP Support**: Model Context Protocol client for external tool integration.
-- **Rich CLI**: Beautiful output with spinners, panels, and colors.
+> **Build. Orchestrate. Scale.**  
+> An extensible, vertical AI agent framework designed for the next generation of software engineering.
 
 ---
 
-## 🚀 Quick Start
+## ⚡️ Frictionless AI Development
+
+KOR is designed to be **instant**. Forget complex setups.
 
 ### 1. Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/felipepimentel/kor-sdk.git
 cd kor-sdk
-
-# Install with uv
 uv sync
 ```
 
-### 2. Configure
+### 2. Boot (Zero Config)
+
+KOR runs in **Mock Mode** by default. You don't need an API key to see it in action.
 
 ```bash
-# Set your API key (stored in ~/.kor/config.toml)
-uv run kor config set openai_api_key=sk-your-key
-```
-
-### 3. Run
-
-```bash
-# Boot the system
 uv run kor boot
-
-# Start chatting with the agent
 uv run kor chat
-
-# Check system health
-uv run kor doctor
 ```
 
-### 4. Use in Python
+### 3. Connect Real Intelligence
 
-```python
-from kor_core import Kor
+Ready to solve real problems? Connect your provider of choice.
 
-# Zero-config initialization (simplest way)
-kor = Kor(api_key="sk-...", model="openai:gpt-4o")
-kor.boot()
-
-# Or with explicit config file
-kor = Kor()  # Uses ~/.kor/config.toml
-kor.boot()
-
-# Use the facade
-tools = kor.tools.search("file")
-results = kor.run_sync("Analyze this code")
+```bash
+# Example: Using OpenAI
+uv run kor config set secrets.openai_api_key=sk-...
+uv run kor config set llm.default.provider=openai
+uv run kor config set llm.default.model=gpt-4o
 ```
+
+---
+
+## 🧩 Why KOR?
+
+### 🏛️ Vertical Architecture
+
+KOR is organized by **Domain**, not by layer.
+
+- **MCP**: Full Model Context Protocol server/client.
+- **LSP**: Integrated Language Server Protocol (Sense code like an IDE).
+- **Skills**: Modular capabilities you can drop in and out.
+
+### 🚀 Agentic Core
+
+Built on **LangGraph**, KOR implements a robust Supervisor-Worker pattern.
+
+- **Architect**: Plans systems.
+- **Coder**: Writes code.
+- **Reviewer**: Catch bugs.
+- **Explorer**: Navigates the codebase using semantic graph search.
+
+### 🔌 Ultimate Extensibility
+
+Everything is a plugin.
+
+- **Declarative Plugins**: Define tools in `plugin.json` and scripts. Zero Python boilerplate.
+- **Deep Integration**: Subclass `KorPlugin` for full control over the specific kernel lifecycle hooks.
 
 ---
 
 ## 🛠️ CLI Commands
 
 | Command | Description |
-| --- | --- |
-| `kor boot` | Initializes the Kernel and loads plugins. |
-| `kor chat` | Starts an interactive session with the AI agent. |
-| `kor doctor` | Runs diagnostics on your environment. |
-| `kor new <name>` | Scaffolds a new plugin project. |
-| `kor config set KEY=VALUE` | Sets a configuration value. |
-| `kor config get KEY` | Gets a configuration value. |
+| :--- | :--- |
+| `kor boot` | Initializes the Kernel, loads context, and prepares the mesh. |
+| `kor chat` | Interactive session with the Agent Swarm. |
+| `kor doctor` | Self-healing diagnostics to ensure your environment is perfect. |
+| `kor new` | Scaffolds a new plugin or project in seconds. |
+| `kor config` | Manages your environment configuration effortlessly. |
 
 ---
 
-## 🔌 Creating a Plugin
+## 🏗️ Architecture at a Glance
 
-```bash
-uv run kor new my-awesome-plugin
+```mermaid
+graph TD
+    User[User / CLI] --> Facade[Kor Facade]
+    Facade --> Kernel[Kernel Orchestrator]
+    
+    subgraph Verticals [Vertical Domains]
+        MCP[MCP Server]
+        LSP[LSP Client]
+        Skills[Skill Registry]
+        Agents[Agent Graph]
+    end
+    
+    Kernel --> Verticals
+    
+    subgraph Services [Shared Services]
+        Events[Event Bus]
+        Config[Config Manager]
+        LLM[LLM Registry]
+    end
+    
+    Verticals --> Services
 ```
 
-This generates:
-
-```text
-my-awesome-plugin/
-├── agents/
-├── commands/
-├── skills/
-├── main.py
-└── plugin.json
-```
-
-Link your plugin to `~/.kor/plugins/` to activate it.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a deep dive.
 
 ---
 
-## 📄 License
+## 🤝 Contributing
 
-MIT
+We are building the future of coding agents.
+Check [AGENTS.md](AGENTS.md) to understand how to interact with this repository as an AI agent.
+
+**License**: MIT

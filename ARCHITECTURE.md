@@ -1,20 +1,65 @@
 # KOR SDK Architecture
 
-**Version:** 7.0 (Vertical Architecture)
+**Version:** 7.0 (Vertical Architecture)  
 **Core Philosophy:** "Consolidated, Pythonic, Vertical."
 
 ## 1. High-Level Overview
 
-The KOR SDK is designed as a modular, vertical system where feature domains (like MCP, LSP, Skills) are self-contained. The system is exposed to developers through a high-level **Facade**.
+The KOR SDK departs from traditional layered architectures (Controller, Service, Repository). Instead, it uses a **Vertical Architecture** where features are self-contained domains.
 
-### Layers
+A "Vertical" (like `mcp` or `lsp`) encapsulates everything it needs: its logic, its loaders, its registries, and its specific configuration.
 
-1. **Facade (`kor_core.api`)**: The polished surface. Users interact primarily with the `Kor` class.
-2. **Kernel (`kor_core.kernel`)**: The internal engine. Orchestrates lifecycle, events (`HookManager`), and services.
-3. **Vertical Modules**: Self-contained domains (`mcp`, `lsp`, `skills`, `plugin`) that encapsulate their own logic, loaders, and registries.
-4. **Unified Utilities**: Shared infrastructure (`search`, `events`, `commands`, `utils`) used by all verticals.
+The entire system is exposed to developers through a high-level **Facade** (`kor_core.Kor`), which orchestrates the **Kernel**.
 
-## 2. Directory Structure
+### Architectural Diagram
+
+```mermaid
+graph TD
+    %% Use slightly different colors for clarity
+    classDef facade fill:#f96,stroke:#333,stroke-width:2px;
+    classDef kernel fill:#69f,stroke:#333,stroke-width:2px;
+    classDef vertical fill:#dfd,stroke:#333,stroke-width:2px;
+    classDef shared fill:#eee,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5;
+
+    User[User / CLI] -->|Instantiates| Facade[Kor Facade]
+    Facade:::facade -->|Boot/Run| Kernel[Kernel]
+    Kernel:::kernel -->|Orchestrates| Verticals
+    
+    subgraph Verticals [Vertical Modules]
+        direction TB
+        MCP:::vertical
+        LSP:::vertical
+        Skills:::vertical
+        LLM:::vertical
+        Context:::vertical
+        Plugins:::vertical
+    end
+    
+    subgraph Shared [Unified Utilities]
+        Events:::shared
+        Config:::shared
+        Search:::shared
+    end
+    
+    Verticals -.->|Uses| Shared
+    Kernel -.->|Uses| Shared
+```
+
+## 2. Layers
+
+1. **Facade (`kor_core.api`)**: The polished surface. Users interactions should happen almost exclusively here.
+2. **Kernel (`kor_core.kernel`)**: The internal engine. It manages the lifecycle (Boot, Shutdown) and holds the global `HookManager`.
+3. **Vertical Domains**:
+    * `mcp/`: Model Context Protocol implementation.
+    * `lsp/`: Language Server Protocol client.
+    * `skills/`: Reusable capability modules.
+    * `llm/`: Provider logic and Model Registry.
+4. **Shared Infrastructure**:
+    * `events.py`: A unified, typed Event Bus.
+    * `config.py`: Central Pydantic configuration.
+    * `search.py`: Standardized search protocols.
+
+## 3. Directory Structure
 
 ```text
 packages/kor-core/src/kor_core/
@@ -27,65 +72,43 @@ packages/kor-core/src/kor_core/
 ├── skills.py           # Skill System (Single File Module)
 ├── prompts.py          # Prompt System (Single File Module)
 │
-├── mcp/                # Model Context Protocol (Vertical)
-├── lsp/                # Language Server Protocol (Vertical)
-├── agent/              # Agent Logic (Vertical)
-├── llm/                # LLM & Providers (Vertical)
-└── tools/              # Tool Implementations (Shared)
+├── mcp/                # [Vertical] Model Context Protocol
+├── lsp/                # [Vertical] Language Server Protocol
+├── agent/              # [Vertical] Agent Graphs & Swarms
+└── llm/                # [Vertical] LLM Providers
 ```
 
-## 3. Key Architectural Decisions
+## 4. Key Decisions
 
-### Vertical Architecture
+### Verticality
 
-Instead of splitting code by technical layer (e.g., `loaders/`, `registries/`), we split by **domain**.
-
-- **MCP** logic lives in `mcp/`.
-- **LSP** logic lives in `lsp/`.
-Makes the codebase easier to navigate and maintain.
+We avoid spreading a feature across `src/loaders`, `src/services`, `src/models`. If a feature is "MCP", it lives in `src/kor_core/mcp`. This makes the code **navigable** and **portable**.
 
 ### Consolidated Modules
 
-For domains with low complexity (< 5 files), we consolidate classes into a single file to reduce file hopping.
-
-- `plugin.py` contains `PluginLoader`, `PluginManifest`, `KorContext`.
-- `skills.py` contains `SkillRegistry`, `SkillLoader` (inherits `BaseLoader`).
-- `commands.py` contains `CommandRegistry`, `CommandLoader` (inherits `BaseLoader`).
+For domains with low complexity (< 5 files), we consolidate classes into a single file (Result: `plugin.py`, `skills.py`). This reduces mental overhead and file-hopping.
 
 ### Facade Pattern
 
-We hide complexity behind the `Kor` facade.
-**Before:** Users imported `Kernel`, `ToolRegistry`, `HookManager`.
-**After:** Users just instantiate `Kor`.
+Code should be "easy to use correctly and hard to use incorrectly."
 
-```python
-kor = Kor()
-kor.boot()
-kor.tools.register(...)
-```
+* **Bad**: manually instantiating `Kernel`, registering `HookManager`, then loading plugins.
+* **Good**: `kor = Kor(); kor.boot()`
 
 ### Resource Isolation
 
-Non-code assets (markdown prompts) are kept in `resources/` at the repository root, ensuring a clean separation from source code.
+Non-code assets (markdown prompts, graphic assets) are kept in `resources/` at the repository root. They are **not** mixed with Python source code.
 
-## 4. The Plugin System
+## 5. Plugin System
 
-KOR is designed to be extensible.
+KOR is designed to be extensible via plugins.
 
-- **Core Plugins**: Loaded automatically from `kor_core`.
-- **User Plugins**: Loaded from `~/.kor/plugins` or valid Python entry points.
-- **Declarative Plugins**: Defined by `plugin.json` + `scripts/`, requiring no Python packaging.
+* **Core Plugins**: Functionality built into `kor-core` but loaded as plugins.
+* **Declarative Plugins**: Defined by `plugin.json` + `scripts/`. These require NO Python packaging and are perfect for simple tool integrations.
+* **Code Plugins**: Full Python packages that subclass `KorPlugin` for deep integration.
 
-## 5. CLI Architecture
+## 6. CLI Strategy
 
-The KOR CLI (`kor-cli`) is designed to be a thin client over the Core.
+The CLI (`kor-cli`) is a **Client** of the Core. It parses arguments and calls the Facade.
 
-### Agent Decoupling
-
-The `chat` command does not know about specific agents ("Coder", "Architect"). Instead, it consumes **Events** from the `GraphRunner` and renders them based on their shape:
-
-- **Routing Events**: `{ "next_step": "..." }` → Renders as Supervisor routing.
-- **Message Events**: `{ "messages": [...] }` → Renders as Agent dialogue.
-- **Output Events**: `{ "output": "..." }` → Renders as Tool output.
-
-This adheres to the **Open/Closed Principle**: New agents can be added to the Core without modifying the CLI.
+Critically, the CLI is **Agent-Agnostic**. The `kor chat` command does not have hardcoded logic for "The Coder Agent." Instead, it subscribes to event streams from the Kernel and renders them based on their type (Message, Tool Output, Trace, Error). This allows the agent graph to evolve independently of the CLI.

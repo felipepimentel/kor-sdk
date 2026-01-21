@@ -24,7 +24,14 @@ def new(name: str, plugin: bool):
         _scaffold_plugin(target_dir, name)
     
     console.print(f"[bold green]Success![/] New plugin scaffolded at {target_dir}")
-    console.print("To use it, link it to your ~/.kor/plugins directory or configure it in config.toml.")
+    
+    console.print("\n[bold]Next Steps:[/]")
+    console.print("1. Link your plugin:")
+    console.print(f"   [cyan]ln -s {target_dir} ~/.kor/plugins/{name}[/]")
+    console.print("2. Boot KOR:")
+    console.print("   [cyan]kor boot[/]")
+    console.print("3. Check it loaded:")
+    console.print("   [cyan]kor doctor[/]")
 
 def _scaffold_plugin(path: Path, name: str):
     # 1. Create plugin.json

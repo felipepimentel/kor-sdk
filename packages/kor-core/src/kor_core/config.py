@@ -175,6 +175,8 @@ class ConfigManager:
         """Loads configuration from disk, creating default if missing."""
         if not self.config_path.exists():
             logger.info(f"Config not found at {self.config_path}. Creating default.")
+            # Ensure defaults are applied (like Mock LLM)
+            self._validate_config()
             self.save()
             return self._config
 
@@ -196,8 +198,9 @@ class ConfigManager:
     def _validate_config(self):
         """Perform semantic validation on the configuration."""
         if not self._config.llm.default and not self._config.llm.purposes:
-            # Only warn if no LLM configured at all, as it might be fine for some use cases
-            logger.warning("No default LLM configuration found ([llm.default]). AI features may fail.")
+            # Default to Mock if no LLM configured
+            logger.info("No LLM configuration found. Defaulting to Mock Provider.")
+            self._config.llm.default = ModelRef(provider="mock", model="mock-gpt")
 
 
     def _interpolate_env_vars(self, data: Any) -> Any:

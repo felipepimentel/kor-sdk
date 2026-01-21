@@ -18,6 +18,10 @@ class LLMRegistry:
         # Cache key: "provider:model:config_hash" -> Model Instance
         self._model_cache: Dict[str, BaseChatModel] = {}
         self._cache_enabled = True
+        
+        # Register default internal providers
+        from .provider import MockProvider
+        self.register(MockProvider())
 
     def register(self, provider: BaseLLMProvider) -> None:
         """Registers a new LLM provider."""

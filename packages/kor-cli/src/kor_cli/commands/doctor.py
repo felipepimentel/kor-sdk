@@ -40,10 +40,23 @@ def doctor():
     except Exception as e:
         table.add_row("KOR Kernel", "[red]✘[/]", f"Boot failed: {e}")
 
-    # 3. Config Check
+    # 3. Config & AI Check
     config_path = Path.home() / ".kor" / "config.toml"
     if config_path.exists():
         table.add_row("Config", "[green]✔[/]", f"Found at {config_path}")
+        
+        # Check LLM Status
+        try:
+            from kor_core.config import ConfigManager
+            cfg = ConfigManager(config_path=config_path).load()
+            if cfg.llm.default:
+                provider_info = f"{cfg.llm.default.provider}:{cfg.llm.default.model}"
+                table.add_row("Active AI", "[green]✔[/]", f"Using {provider_info}")
+            else:
+                 table.add_row("Active AI", "[yellow]![/]", "No default LLM configured")
+        except Exception:
+             table.add_row("Active AI", "[red]✘[/]", "Failed to load config")
+            
     else:
         table.add_row("Config", "[yellow]![/]", "Not found (default will be created)")
 

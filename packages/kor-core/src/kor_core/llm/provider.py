@@ -164,4 +164,57 @@ class UnifiedProvider:
         return bool(config.get("api_key") or config.get("base_url"))
 
 
-__all__ = ["BaseLLMProvider", "UnifiedProvider"]
+
+# =============================================================================
+# Mock Provider
+# =============================================================================
+
+class MockChatModel:
+    """Simple mock chat model that echoes input or returns fixed response."""
+    def __init__(self, response: str = "Mock Response"):
+        self.response = response
+
+    def __call__(self, messages: Any, **kwargs):
+        # Handle dict-style or object-style messages
+        last_msg = messages[-1] if messages else None
+        content = ""
+        if hasattr(last_msg, 'content'):
+            content = last_msg.content
+        elif isinstance(last_msg, dict):
+            content = last_msg.get('content', '')
+            
+        from langchain_core.messages import AIMessage
+        return AIMessage(content=self.response)
+
+    # Allow async invocation
+    async def ainvoke(self, input: Any, **kwargs) -> Any:
+        return self(input, **kwargs)
+        
+    def bind_tools(self, tools: Any, **kwargs):
+        return self
+
+class MockProvider:
+    """Provider for default Mock LLM."""
+    
+    def __init__(self, name: str = "mock"):
+        self.name = name
+
+    def get_chat_model(
+        self, 
+        model_name: str, 
+        config: Dict[str, Any]
+    ):
+        return MockChatModel(response=config.get("response", "Mock AI: I am ready."))
+        
+    def get_streaming_model(
+        self,
+        model_name: str,
+        config: Dict[str, Any]
+    ):
+        return self.get_chat_model(model_name, config)
+    
+    def validate_config(self, config: Dict[str, Any]) -> bool:
+        return True
+
+
+__all__ = ["BaseLLMProvider", "UnifiedProvider", "MockProvider"]
