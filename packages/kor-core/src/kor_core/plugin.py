@@ -116,6 +116,13 @@ class PluginPermission(BaseModel):
     scope: str
     reason: str
 
+class ProviderDefinition(BaseModel):
+    """Declarative definition of an LLM provider."""
+    name: str = Field(description="Unique provider name")
+    description: Optional[str] = None
+    entry_point: Optional[str] = Field(None, description="Path to provider class (module:Class)")
+    config: Dict[str, Any] = Field(default_factory=dict)
+
 class PluginManifest(BaseModel):
     """
     Schema for plugin.json.
@@ -138,6 +145,9 @@ class PluginManifest(BaseModel):
     
     # Agents (Uses Unified AgentDefinition)
     agents: List[AgentDefinition] = Field(default_factory=list)
+    
+    # Providers (Uses ProviderDefinition)
+    providers: List[ProviderDefinition] = Field(default_factory=list)
     
     # Resource paths
     commands_dir: str = "commands"
@@ -163,7 +173,8 @@ class PluginLoader:
         self._plugins: Dict[str, KorPlugin] = {}
         self._discovered_classes: List[Type[KorPlugin]] = []
         self._discovered_agents: List[AgentDefinition] = []
-        self._discovered_manifests: Dict[str, PluginManifest] = {}
+        # Store tuple (Manifest, RootPath)
+        self._discovered_manifests: Dict[str, tuple[PluginManifest, Path]] = {}
         
         # Declarative resource storage
         self._discovered_commands: List["Command"] = []
@@ -191,10 +202,23 @@ class PluginLoader:
             logger.debug(f"No entry-points found for group '{group}': {e}")
 
     def load_directory_plugins(self, plugins_dir: Path) -> None:
-        """Scans a directory for plugins with plugin.json manifests."""
+        """
+        Scans a directory for plugins with plugin.json manifests.
+        Also accepts a path to a single plugin directory (containing plugin.json).
+        """
         if not plugins_dir.exists():
             return
 
+        # Case 0: The path itself IS a plugin
+        direct_manifest = plugins_dir / "plugin.json"
+        if direct_manifest.exists():
+            try:
+                self._load_plugin_from_manifest(direct_manifest, plugins_dir)
+                return
+            except Exception as e:
+                logger.error(f"Failed to load plugin from {plugins_dir}: {e}")
+
+        # Case 1: The path contains plugins (scan subdirectories)
         for entry in plugins_dir.iterdir():
             if entry.is_dir():
                 manifest_path = entry / "plugin.json"
@@ -212,7 +236,7 @@ class PluginLoader:
         # because PluginManifest.agents is typed as List[AgentDefinition]
         manifest = PluginManifest(**data)
         logger.info(f"Discovered plugin: {manifest.name} v{manifest.version}")
-        self._discovered_manifests[manifest.name] = manifest
+        self._discovered_manifests[manifest.name] = (manifest, root_dir)
 
         # Store agents from manifest
         if manifest.agents:
@@ -347,3 +371,100 @@ class PluginLoader:
 
     def get_plugin(self, plugin_id: str) -> KorPlugin:
         return self._plugins[plugin_id]
+
+    def _load_declarative_providers(self, root_dir: Path, manifest: PluginManifest, context: KorContext) -> None:
+        """Loads and registers providers defined in the manifest."""
+        if not manifest.providers:
+            return
+
+        registry = context.registry.get_llm_registry()
+        
+        for prov_def in manifest.providers:
+            try:
+                # Case 1: Custom Class via entry_point
+                if prov_def.entry_point:
+                    # We need to resolve the module path similar to how we load the plugin itself
+                    # If the entry point is in the plugin's src/ directory, we ensure it's in sys.path
+                    src_dir = root_dir / "src"
+                    path_to_add = str(src_dir) if src_dir.exists() else str(root_dir)
+                    
+                    sys.path.insert(0, path_to_add)
+                    try:
+                        module_name, class_name = prov_def.entry_point.split(":")
+                        module = importlib.import_module(module_name)
+                        provider_cls = getattr(module, class_name)
+                        
+                        # Instantiate with name from manifest (overriding class default if needed)
+                        # We assume the constructor accepts 'name' if it inherits from typical bases,
+                        # but if not, we assume the class sets it correctly. 
+                        # Ideally, we pass name to constructor.
+                        try:
+                            provider_instance = provider_cls(name=prov_def.name)
+                        except TypeError:
+                            # Fallback: maybe no args?
+                            provider_instance = provider_cls()
+                            # Force name match
+                            if hasattr(provider_instance, "name"):
+                                provider_instance.name = prov_def.name
+                                
+                        registry.register(provider_instance)
+                        logger.info(f"Registered custom provider '{prov_def.name}' from {manifest.name}")
+                        
+                    finally:
+                        if path_to_add in sys.path:
+                            sys.path.remove(path_to_add)
+
+                # Case 2: Standard UnifiedProvider (Configuration only)
+                else:
+                    from .llm.provider import UnifiedProvider
+                    # Merge manifestation config with potentially empty defaults
+                    # For now, we just register the provider presence. 
+                    # The actual runtime config (api keys) usually comes from main user config,
+                    # but this allows defining "aliases" or "presets".
+                    
+                    # NOTE: UnifiedProvider constructor is simple.
+                    provider_instance = UnifiedProvider(name=prov_def.name)
+                    registry.register(provider_instance)
+                    logger.info(f"Registered unified provider '{prov_def.name}' from {manifest.name}")
+                    
+            except Exception as e:
+                logger.error(f"Failed to register provider '{prov_def.name}' from plugin {manifest.name}: {e}")
+
+    def load_plugins(self, context: KorContext) -> None:
+        """Instantiates and initializes all registered plugins."""
+        # 0. Register agents found in manifests
+        try:
+             agent_registry = context.registry.get_service("agents")
+             for agent_def in self._discovered_agents:
+                 agent_registry.register(agent_def)
+                 logger.info(f"Registered agent from manifest: {agent_def.id}")
+        except Exception as e:
+             logger.warning(f"Could not register agents: {e}")
+
+        # 0.5 Register providers found in manifests (NEW)
+        for _, (manifest, root_dir) in self._discovered_manifests.items():
+            self._load_declarative_providers(root_dir, manifest, context)
+
+        # 1. Instantiate all plugins
+        temp_registry: Dict[str, KorPlugin] = {}
+        for cls in self._discovered_classes:
+            try:
+                plugin = cls()
+                if plugin.id in temp_registry:
+                    logger.warning(f"Duplicate plugin ID {plugin.id}. Skipping.")
+                    continue
+                temp_registry[plugin.id] = plugin
+            except Exception as e:
+                logger.error(f"Failed to instantiate plugin {cls}: {e}")
+
+        # 2. Resolve Dependencies (Simple pass)
+        
+        # 3. Initialize
+        for plugin_id, plugin in temp_registry.items():
+            logger.info(f"Initializing plugin: {plugin_id}")
+            try:
+                plugin.initialize(context)
+                self._plugins[plugin_id] = plugin
+            except Exception as e:
+                logger.error(f"Failed to initialize plugin {plugin_id}: {e}")
+

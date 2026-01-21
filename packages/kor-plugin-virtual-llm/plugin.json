@@ -1,0 +1,15 @@
+{
+    "name": "kor-plugin-virtual-llm",
+    "version": "0.1.0",
+    "description": "A Virtual LLM provider for testing declarative plugins.",
+    "providers": [
+        {
+            "name": "virtual",
+            "description": "Mocked LLM provider",
+            "entry_point": "kor_plugin_virtual_llm.provider:VirtualProvider",
+            "config": {
+                "default_response": "Virtual response from declarative plugin!"
+            }
+        }
+    ]
+}

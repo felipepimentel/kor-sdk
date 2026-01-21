@@ -208,12 +208,7 @@ class Kernel:
             from .llm import UnifiedProvider
             # Register generic 'unified' provider
             self.llm_registry.register(UnifiedProvider(name="unified"))
-            
-            # Register 'openai' alias for backward compatibility
-            self.llm_registry.register(UnifiedProvider(name="openai"))
-            
-            # Register 'litellm' alias for backward compatibility
-            self.llm_registry.register(UnifiedProvider(name="litellm"))
+
             
             logger.debug("Registered built-in LLM providers (unified, openai, litellm)")
         except Exception as e:

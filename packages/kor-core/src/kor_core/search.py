@@ -10,7 +10,7 @@ Provides:
 import re
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, TypeVar, Generic, Type, Protocol
+from typing import List, Dict, Optional, TypeVar, Generic, Type, Protocol, Any
 
 logger = logging.getLogger(__name__)
 
