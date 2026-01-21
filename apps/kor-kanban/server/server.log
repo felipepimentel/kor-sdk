@@ -1,8 +1,14 @@
-INFO:     Started server process [954174]
+INFO:     Started server process [7912]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 3001): address already in use
+INFO:     Uvicorn running on http://0.0.0.0:3001 (Press CTRL+C to quit)
+Initializing KOR Kernel...
+INFO:     127.0.0.1:58370 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33030 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47790 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60472 - "POST /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57366 - "POST /api/tasks HTTP/1.1" 200 OK
+INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-Initializing KOR Kernel...
-Shutting down KOR Kanban Backend...
+INFO:     Finished server process [7912]

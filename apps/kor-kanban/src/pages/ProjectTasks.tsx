@@ -115,12 +115,12 @@ function DiffsPanelContainer({
       gitOps={
         attempt && selectedTask
           ? {
-              task: selectedTask,
-              branchStatus: branchStatus ?? null,
-              branchStatusError,
-              isAttemptRunning,
-              selectedBranch: branchStatus?.[0]?.target_branch_name ?? null,
-            }
+            task: selectedTask,
+            branchStatus: branchStatus ?? null,
+            branchStatusError,
+            isAttemptRunning,
+            selectedBranch: branchStatus?.[0]?.target_branch_name ?? null,
+          }
           : undefined
       }
     />
@@ -312,16 +312,9 @@ export function ProjectTasks() {
   const mode: LayoutMode =
     rawMode === 'preview' || rawMode === 'diffs' ? rawMode : null;
 
-  // TODO: Remove this redirect after v0.1.0 (legacy URL support for bookmarked links)
-  // Migrates old `view=logs` to `view=diffs`
-  useEffect(() => {
-    const view = searchParams.get('view');
-    if (view === 'logs') {
-      const params = new URLSearchParams(searchParams);
-      params.set('view', 'diffs');
-      setSearchParams(params, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
+
+  // Legacy URL support for bookmarked links removed (v0.1.0+)
+
 
   const setMode = useCallback(
     (newMode: LayoutMode) => {

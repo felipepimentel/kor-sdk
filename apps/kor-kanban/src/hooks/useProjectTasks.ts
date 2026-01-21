@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import useWebSocket from 'react-use-websocket';
 import type { TaskStatus, TaskWithAttemptStatus } from 'shared/types';
+import { tasksApi } from '@/lib/api';
 
 export interface UseProjectTasksResult {
   tasks: TaskWithAttemptStatus[];
@@ -10,43 +13,53 @@ export interface UseProjectTasksResult {
   error: string | null;
 }
 
+const getWsUrl = () => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/api/ws`;
+};
+
 export const useProjectTasks = (projectId: string): UseProjectTasksResult => {
-  const [tasksById, setTasksById] = useState<Record<string, TaskWithAttemptStatus>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchTasks = useCallback(async () => {
-    try {
-      // We assume GET /api/tasks returns access to all tasks or filtered by project
-      const response = await fetch(`/api/tasks?project_id=${encodeURIComponent(projectId)}`);
-      if (!response.ok) throw new Error('Failed to fetch tasks');
-      const json = await response.json();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => tasksApi.list(projectId),
+    enabled: !!projectId,
+    // Polling removed in favor of WebSocket updates
+    // refetchInterval: 5000,
+  });
 
-      const map: Record<string, TaskWithAttemptStatus> = {};
-      if (json.success && Array.isArray(json.data)) {
-        json.data.forEach((t: TaskWithAttemptStatus) => {
-          map[t.id] = t;
-        });
+  const { lastJsonMessage } = useWebSocket(getWsUrl(), {
+    onOpen: () => console.log('WebSocket connected'),
+    shouldReconnect: () => true,
+    filter: (message) => {
+      try {
+        const data = JSON.parse(message.data);
+        return ['task_created', 'task_updated', 'task_deleted'].includes(data.type);
+      } catch {
+        return false;
       }
-      setTasksById(map);
-      setIsLoading(false);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
-      setIsLoading(false);
     }
-  }, [projectId]);
+  });
 
-  useEffect(() => {
-    if (projectId) {
-      fetchTasks();
-      const interval = setInterval(fetchTasks, 5000); // Poll every 5s
-      return () => clearInterval(interval);
+  // Listen for WS messages
+  useMemo(() => {
+    if (lastJsonMessage &&
+      typeof lastJsonMessage === 'object' &&
+      'type' in lastJsonMessage) {
+
+      const msgData = (lastJsonMessage as any).data;
+
+      // Only invalidate if the task belongs to the current project
+      if (msgData && msgData.project_id === projectId) {
+        queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      }
     }
-  }, [projectId, fetchTasks]);
+  }, [lastJsonMessage, queryClient, projectId]);
 
-  const { tasks, tasksByStatus } = useMemo(() => {
-    const merged: Record<string, TaskWithAttemptStatus> = { ...tasksById };
+  const { tasks, tasksById, tasksByStatus } = useMemo(() => {
+    const taskList = (data as TaskWithAttemptStatus[]) || [];
+    const merged: Record<string, TaskWithAttemptStatus> = {};
     const byStatus: Record<TaskStatus, TaskWithAttemptStatus[]> = {
       todo: [],
       inprogress: [],
@@ -55,7 +68,8 @@ export const useProjectTasks = (projectId: string): UseProjectTasksResult => {
       cancelled: [],
     };
 
-    Object.values(merged).forEach((task) => {
+    taskList.forEach((task) => {
+      merged[task.id] = task;
       byStatus[task.status]?.push(task);
     });
 
@@ -74,14 +88,14 @@ export const useProjectTasks = (projectId: string): UseProjectTasksResult => {
     });
 
     return { tasks: sorted, tasksById: merged, tasksByStatus: byStatus };
-  }, [tasksById]);
+  }, [data]);
 
   return {
     tasks,
     tasksById,
     tasksByStatus,
     isLoading,
-    isConnected: true, // Mocked
-    error,
+    isConnected: !error,
+    error: error ? (error as Error).message : null,
   };
 };

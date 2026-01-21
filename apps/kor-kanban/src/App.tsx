@@ -36,7 +36,6 @@ import { ReleaseNotesDialog } from '@/components/dialogs/global/ReleaseNotesDial
 import { ClickedElementsProvider } from './contexts/ClickedElementsProvider';
 
 // Design scope components
-import { LegacyDesignScope } from '@/components/legacy-design/LegacyDesignScope';
 import { NewDesignScope } from '@/components/ui-new/scope/NewDesignScope';
 import { TerminalProvider } from '@/contexts/TerminalContext';
 
@@ -135,17 +134,17 @@ function AppContent() {
             <Route
               path="/projects/:projectId/tasks/:taskId/attempts/:attemptId/full"
               element={
-                <LegacyDesignScope>
+                <NewDesignScope>
                   <FullAttemptLogsPage />
-                </LegacyDesignScope>
+                </NewDesignScope>
               }
             />
 
             <Route
               element={
-                <LegacyDesignScope>
+                <NewDesignScope>
                   <NormalLayout />
-                </LegacyDesignScope>
+                </NewDesignScope>
               }
             >
               <Route path="/" element={<Projects />} />

@@ -274,7 +274,22 @@
     @apply transition-colors duration-200;
     cursor: pointer;
   }
+
+  /* Glassmorphism Utilities */
+  .glass-panel {
+    @apply bg-opacity-70 backdrop-blur-md border border-white/10 shadow-xl;
+    background-color: hsla(var(--bg-panel) / 0.6);
+  }
+
+  /* Premium Gradients */
+  .new-design {
+    @apply bg-background text-foreground font-ibm-plex-sans;
+    background: radial-gradient(circle at top left, hsla(var(--brand) / 0.15), transparent 40%),
+      radial-gradient(circle at bottom right, hsla(var(--brand-secondary) / 0.1), transparent 40%),
+      hsl(var(--bg-primary));
+  }
 }
+
 
 /* ANSI color classes for fancy-ansi - optimized for both light and dark modes */
 @layer components {

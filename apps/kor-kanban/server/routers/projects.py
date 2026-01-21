@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, BackgroundTasks
 from typing import List
 from datetime import datetime
 import os
@@ -38,7 +38,7 @@ def list_projects():
     return {"success": True, "data": projects}
 
 @router.post("")
-def create_project(data: dict):
+async def create_project(data: dict, request: Request, background_tasks: BackgroundTasks):
     # Basic creation: Make a directory
     name = data.get("name")
     if not name:
@@ -58,6 +58,17 @@ def create_project(data: dict):
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
+        
+        # Broadcast update
+        manager = getattr(request.app.state, "connection_manager", None)
+        if manager:
+            # We broadcast to all connected clients that a project was created
+            # This allows them to refetch the list
+            background_tasks.add_task(manager.broadcast, {
+                "type": "project_created",
+                "data": new_project
+            })
+            
         return {"success": True, "data": new_project}
     except Exception as e:
         return {"success": False, "message": str(e)}

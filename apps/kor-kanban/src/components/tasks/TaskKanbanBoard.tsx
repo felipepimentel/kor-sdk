@@ -34,7 +34,7 @@ function TaskKanbanBoard({
       {Object.entries(columns).map(([status, tasks]) => {
         const statusKey = status as TaskStatus;
         return (
-          <KanbanBoard key={status} id={statusKey}>
+          <KanbanBoard key={status} id={statusKey} className="glass-panel h-full">
             <KanbanHeader
               name={statusLabels[statusKey]}
               color={statusBoardColors[statusKey]}

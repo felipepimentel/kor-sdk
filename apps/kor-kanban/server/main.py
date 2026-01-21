@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from routers import projects, tasks, attempts, sessions
+from connection_manager import ConnectionManager
 
 # Initialize KOR Kernel global (or singleton) integration
 # Ideally KOR should be initialized once.
@@ -14,6 +15,7 @@ except ImportError:
 async def lifespan(app: FastAPI):
     # Startup: Initialize KOR Kernel if available
     print("Initializing KOR Kernel...")
+    app.state.connection_manager = ConnectionManager()
     if Kernel:
         # Assuming Kernel has an async boot or similar. 
         # For now, we just ensure it's importable.
@@ -37,6 +39,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.websocket("/api/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    manager: ConnectionManager = app.state.connection_manager
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive, maybe receive ping/pong or client commands
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.get("/health")
 def health_check():
