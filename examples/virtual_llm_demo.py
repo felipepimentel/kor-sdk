@@ -2,6 +2,13 @@
 import asyncio
 import logging
 import sys
+import os
+
+# Add project root to sys.path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+# Add kor-core source to sys.path
+sys.path.append(os.path.join(project_root, "packages", "kor-core", "src"))
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +22,7 @@ async def main():
 
     # 1. Configure Kernel to load our new plugin
     # We use extra_paths to point to where we created the plugin
-    plugin_path = "/home/pimentel/Workspace/kor-sdk/packages/kor-plugin-virtual-llm"
+    plugin_path = "/home/pimentel/Workspace/kor-sdk/plugins/kor-plugin-virtual-llm"
     
     config_overrides = {
         "plugins": {
@@ -48,7 +55,7 @@ async def main():
             model = kernel.llm_registry.get_model(
                 provider_name="virtual", 
                 model_name="mock-model", 
-                config={"response": "Verified Response from Script!"}
+                config={"default_response": "Verified Response from Script!"}
             )
             
             # 4. Invoke Model
